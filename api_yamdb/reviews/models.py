@@ -16,7 +16,7 @@ class NameSlugModel(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return self.name
+        return self.name[:10]
 
 
 class Category(NameSlugModel):
@@ -57,7 +57,7 @@ class Title(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.name[:20]
 
     class Meta:
         verbose_name = 'произведение'
