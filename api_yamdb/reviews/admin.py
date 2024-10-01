@@ -15,7 +15,7 @@ class UserAdmin(admin.ModelAdmin):
         'bio',
     )
     search_fields = ('username', 'role')
-    list_filter = ('username',),
+    list_filter = ('username',)
     empty_value_display = '-empty-'
 
 
