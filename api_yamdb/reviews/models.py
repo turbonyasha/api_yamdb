@@ -11,6 +11,7 @@ from reviews.constants import (
     MAX_LENGTH_USERNAME,
     ROLE_CHOICES,
     USER, MAX_LENGTH_ROLE,
+    MAX_LENGTH_UUID
 )
 
 
@@ -127,6 +128,7 @@ class User(AbstractUser):
     confirmation_code = models.CharField(
         verbose_name='Самый секретный код',
         default=uuid.uuid4,
+        max_length=MAX_LENGTH_UUID,
         editable=False,
         unique=True,
         auto_created=True
