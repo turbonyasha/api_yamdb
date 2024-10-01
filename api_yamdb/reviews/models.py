@@ -96,7 +96,8 @@ class User(AbstractUser):
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+\Z',
-                message='Поле \'username\' может содержать только буквы и цифры.'
+                message=('Поле \'username\' может содержать'
+                         'только буквы и цифры.')
             ),
         ],
     )
@@ -141,3 +142,76 @@ class User(AbstractUser):
 
     def __str__(self):
         return f'{self.username} ({self.email})'
+
+
+class Review(models.Model):
+    """Модель отзыва для произведения."""
+
+    text = models.TextField(
+        max_length=500,
+        verbose_name='Текст отзыва'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор отзыва'
+    )
+    score = models.PositiveIntegerField(
+        verbose_name='Оценка пользователя',
+        choices=[(i, str(i)) for i in range(1, 11)]
+    )
+    pub_date = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата создания'
+    )
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        verbose_name='Произведение'
+    )
+
+    def __str__(self):
+        return f'Отзыв на {self.title.name} от {self.author.username}'
+
+    class Meta:
+        verbose_name = 'отзыв'
+        verbose_name_plural = 'Отзывы'
+        ordering = ('-pub_date',)
+        default_related_name = 'reviews'
+
+
+class Comment(models.Model):
+    """Модель комментария к отзыву."""
+
+    text = models.TextField(
+        max_length=250,
+        verbose_name='Текст комментария'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор комментария'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        verbose_name='Отзыв'
+    )
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        verbose_name='Произведение'
+    )
+    pub_date = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата создания'
+    )
+
+    def __str__(self):
+        return f'Комментарий к отзыву {self.review.text[:20]}'
+
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+        ordering = ('-pub_date',)
+        default_related_name = 'comments'
