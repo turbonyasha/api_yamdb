@@ -69,6 +69,7 @@ class Title(models.Model):
         blank=True,
         verbose_name='Жанр'
     )
+    description = models.TextField(verbose_name='Описание')
 
     def __str__(self):
         return self.name[:20]
