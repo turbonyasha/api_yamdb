@@ -83,8 +83,8 @@ class Title(models.Model):
 class GenreTitle(models.Model):
     """Промежуточная модель для произведений и жанров."""
 
-    genre_id = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    title_id = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
 
 class User(AbstractUser):
