@@ -149,7 +149,6 @@ class Review(models.Model):
     """Модель отзыва для произведения."""
 
     text = models.TextField(
-        max_length=500,
         verbose_name='Текст отзыва'
     )
     author = models.ForeignKey(
@@ -185,7 +184,6 @@ class Comment(models.Model):
     """Модель комментария к отзыву."""
 
     text = models.TextField(
-        max_length=250,
         verbose_name='Текст комментария'
     )
     author = models.ForeignKey(
