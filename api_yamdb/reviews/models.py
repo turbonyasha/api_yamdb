@@ -166,7 +166,6 @@ class Review(models.Model):
     )
     title = models.ForeignKey(
         Title,
-        related_name='title',
         on_delete=models.CASCADE,
         verbose_name='Произведение'
     )
@@ -194,13 +193,11 @@ class Comment(models.Model):
     )
     review = models.ForeignKey(
         Review,
-        related_name='review',
         on_delete=models.CASCADE,
         verbose_name='Отзыв'
     )
     title = models.ForeignKey(
         Title,
-        related_name='title',
         on_delete=models.CASCADE,
         verbose_name='Произведение'
     )
