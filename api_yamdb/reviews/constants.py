@@ -13,3 +13,8 @@ ROLE_CHOICES = [
     (ADMIN, ADMIN),
     (MODERATOR, MODERATOR),
 ]
+
+USER_NAME_INVALID_MSG = (
+    'Поле \'username\' может содержать только буквы и цифры.'
+)
+USERNAME_REGEX = r'^[\w.@+-]+\Z'
