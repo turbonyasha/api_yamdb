@@ -1,3 +1,7 @@
+from rest_framework import serializers
+
+from reviews.models import Category, Comment, Genre, Review, Title, User
+
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 
@@ -7,7 +11,6 @@ from reviews.constants import (
     USER_NAME_INVALID_MSG,
     USERNAME_REGEX,
 )
-from reviews.models import User
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -58,3 +61,57 @@ class GetTokenSerializer(serializers.ModelSerializer):
             'username',
             'confirmation_code',
         )
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        exclude = ['id']
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Genre
+        exclude = ['id']
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Review
+        fields = '__all__'
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Title
+        fields = [
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        ]
+
+    def get_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews:
+            return int(sum(
+                review.score for review in reviews
+            ) / len(reviews))
+        else:
+            return 0

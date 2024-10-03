@@ -71,6 +71,7 @@ class Title(models.Model):
         blank=True,
         verbose_name='Жанр'
     )
+    description = models.TextField(verbose_name='Описание', null=True)
 
     def __str__(self):
         return self.name[:20]
@@ -141,7 +142,6 @@ class Review(models.Model):
     """Модель отзыва для произведения."""
 
     text = models.TextField(
-        max_length=500,
         verbose_name='Текст отзыва'
     )
     author = models.ForeignKey(
@@ -159,6 +159,7 @@ class Review(models.Model):
     )
     title = models.ForeignKey(
         Title,
+        related_name='title',
         on_delete=models.CASCADE,
         verbose_name='Произведение'
     )
@@ -177,7 +178,6 @@ class Comment(models.Model):
     """Модель комментария к отзыву."""
 
     text = models.TextField(
-        max_length=250,
         verbose_name='Текст комментария'
     )
     author = models.ForeignKey(
@@ -187,11 +187,13 @@ class Comment(models.Model):
     )
     review = models.ForeignKey(
         Review,
+        related_name='review',
         on_delete=models.CASCADE,
         verbose_name='Отзыв'
     )
     title = models.ForeignKey(
         Title,
+        related_name='title',
         on_delete=models.CASCADE,
         verbose_name='Произведение'
     )
