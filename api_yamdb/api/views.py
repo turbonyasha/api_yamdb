@@ -1,6 +1,7 @@
 
 from django.shortcuts import get_object_or_404
 from rest_framework import (
+    exceptions,
     filters,
     permissions,
     status,
@@ -19,13 +20,14 @@ from api.utilits import (
     is_valid_confirmation_code,
     send_confirmation_code
 )
-from reviews.models import User
-from .permissions import AdminOnlyPermission
+from reviews.models import User, Review, Title, Comment
+from .permissions import AdminOnlyPermission, ReviewCommentSectionPermissions
 from .serializers import (
     AdminSerializer,
     AuthSerializer,
     GetTokenSerializer,
     UserSerializer,
+    ReviewSerializer
 )
 
 
@@ -155,3 +157,28 @@ def get_user_token(request):
         status=status.HTTP_200_OK
     )
 
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    Представление для реализации операций
+    GET, POST, PATCH, DELETE
+    для модели отзывов.
+    """
+    serializer_class = ReviewSerializer
+    permission_classes = [ReviewCommentSectionPermissions]
+
+    def get_title(self):
+        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+
+    def get_queryset(self):
+        return self.get_title.reviews.all()
+
+    def perform_create(self, serializer):
+        if Review.objects.filter(
+            title_id=self.kwargs.get('title_id'),
+            author=self.request.user
+        ).exists():
+            raise exceptions.ValidationError(
+                "Вы уже оставили отзыв на это произведение."
+            )
+        serializer.save(author=self.request.user, title=self.get_title())
