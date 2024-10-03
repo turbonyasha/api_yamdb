@@ -7,11 +7,13 @@ from django.db import models
 from reviews.constants import (
     MAX_LENGTH_BIO,
     MAX_LENGTH_EMAIL,
-    MAX_LENGTH_NAME,
+    MAX_LENGTH_ROLE,
     MAX_LENGTH_USERNAME,
+    MAX_LENGTH_UUID,
     ROLE_CHOICES,
-    USER, MAX_LENGTH_ROLE,
-    MAX_LENGTH_UUID
+    USER,
+    USER_NAME_INVALID_MSG,
+    USERNAME_REGEX,
 )
 
 
@@ -96,36 +98,27 @@ class User(AbstractUser):
         max_length=MAX_LENGTH_USERNAME,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
-                message=('Поле \'username\' может содержать'
-                         'только буквы и цифры.')
+                regex=USERNAME_REGEX,
+                message=USER_NAME_INVALID_MSG,
             ),
         ],
     )
     email = models.EmailField(
-        verbose_name='email',
-        unique=True,
+        'Почта',
         max_length=MAX_LENGTH_EMAIL,
-    )
-    first_name = models.CharField(
-        verbose_name='Имя',
-        max_length=MAX_LENGTH_NAME,
-    )
-    last_name = models.CharField(
-        verbose_name='Фамилия',
-        max_length=MAX_LENGTH_NAME,
+        unique=True,
     )
     bio = models.CharField(
-        verbose_name='Био',
+        'Био',
         max_length=MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
-        verbose_name='Роль',
+        'Роль',
+        max_length=MAX_LENGTH_ROLE,
         choices=ROLE_CHOICES,
         default=USER,
-        max_length=MAX_LENGTH_ROLE,
     )
     confirmation_code = models.CharField(
         verbose_name='Самый секретный код',
