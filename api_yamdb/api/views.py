@@ -1,3 +1,183 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import (
+    filters,
+    permissions,
+    status,
+    viewsets
+)
+from rest_framework.decorators import (
+    action,
+    api_view,
+    permission_classes
+)
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 
-# Create your views here.
+from api.utilits import (
+    create_user,
+    is_valid_confirmation_code,
+    send_confirmation_code
+)
+from reviews.models import User, Category, Genre, Title
+from .permissions import AdminOnlyPermission, AdminUserPermission
+from .serializers import (
+    AdminSerializer,
+    AuthSerializer,
+    GetTokenSerializer,
+    UserSerializer,
+    GenreSerializer,
+    TitleSerializer,
+    CategorySerializer
+)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = AdminSerializer
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+    permission_classes = (AdminOnlyPermission,)
+    http_method_names = [
+        'get',
+        'post',
+        'delete',
+        'patch',
+    ]
+
+    @action(
+        methods=['GET', 'PATCH'],
+        url_path='me',
+        detail=False,
+        permission_classes=(permissions.IsAuthenticated,),
+    )
+    def profile(self, request):
+        """Получение/обновление данных пользователя."""
+        if request.method == 'GET':
+            return self.get_user_data(request)
+
+        if request.method == 'PATCH':
+            return self.update_user_data(request)
+
+    def get_user_data(self, request) -> Response:
+        """Получение данных текущего пользователя."""
+        serializer = UserSerializer(request.user)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+    def update_user_data(self, request) -> Response:
+        """Обновление данных пользователя."""
+        serializer = UserSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(
+            raise_exception=True
+        )
+        serializer.save(
+            role=request.user.role
+        )
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny],)
+def register_user(request):
+    """Регистрации нового пользователя."""
+    serializer = AuthSerializer(
+        data=request.data
+    )
+    serializer.is_valid(
+        raise_exception=True
+    )
+    user = create_user(serializer)
+    if not user:
+        return Response(
+            {
+                'error': 'Указанный username '
+                         'или email существует!'
+                         'Ты нас не обманешь, мошенник.'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if user.username == 'me':
+        return Response(
+            {
+                'error': 'Недопустимое имя пользователя, '
+                         'придумай что-нибудь еще.'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    send_confirmation_code(user)
+    return Response(
+        serializer.data,
+        status=status.HTTP_200_OK
+    )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny], )
+def get_user_token(request):
+    """Получения токена пользователя."""
+    serializer = GetTokenSerializer(
+        data=request.data
+    )
+    serializer.is_valid(
+        raise_exception=True
+    )
+
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data['username']
+    )
+
+    if not is_valid_confirmation_code(
+            user,
+            serializer.validated_data['confirmation_code']
+    ):
+        return Response(
+            {
+                'error': 'Неверный код подтверждения, товарищ.'
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response(
+        {
+            'token': str(AccessToken.for_user(user))
+        },
+        status=status.HTTP_200_OK
+    )
+
+
+class CategoryGenreViewSet(viewsets.ModelViewSet):
+    permission_classes = (AdminUserPermission,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class GenreViewSet(CategoryGenreViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+
+
+class CategoryViewSet(CategoryGenreViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (AdminUserPermission,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category__slug', 'genre__slug,', 'name', 'year')

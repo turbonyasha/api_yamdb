@@ -7,11 +7,15 @@ from django.db import models
 from reviews.constants import (
     MAX_LENGTH_BIO,
     MAX_LENGTH_EMAIL,
-    MAX_LENGTH_NAME,
+    MAX_LENGTH_ROLE,
     MAX_LENGTH_USERNAME,
+    MAX_LENGTH_UUID,
+    MAX_CONTENT_NAME,
+    MAX_CONTENT_SLUG,
     ROLE_CHOICES,
-    USER, MAX_LENGTH_ROLE,
-    MAX_LENGTH_UUID
+    USER,
+    USER_NAME_INVALID_MSG,
+    USERNAME_REGEX,
 )
 
 
@@ -22,8 +26,15 @@ class NameSlugModel(models.Model):
     Представление объекта класса тоже по полю названия.
     """
 
-    name = models.CharField(max_length=50, verbose_name='Название')
-    slug = models.SlugField(unique=True, verbose_name='Слаг')
+    name = models.CharField(
+        max_length=MAX_CONTENT_NAME,
+        verbose_name='Название'
+    )
+    slug = models.SlugField(
+        max_length=MAX_CONTENT_SLUG,
+        unique=True,
+        verbose_name='Слаг'
+    )
 
     class Meta:
         abstract = True
@@ -53,20 +64,18 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории."""
 
     name = models.CharField(
-        max_length=200, verbose_name='Название произведения'
+        max_length=MAX_CONTENT_NAME, verbose_name='Название произведения'
     )
     year = models.IntegerField(verbose_name='Год создания')
     category = models.ForeignKey(
         Category,
         related_name='titles',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         verbose_name='Категория',
-        null=True,
     )
     genres = models.ManyToManyField(
         Genre,
         through='GenreTitle',
-        blank=True,
         verbose_name='Жанр'
     )
     description = models.TextField(verbose_name='Описание', null=True)
@@ -96,36 +105,27 @@ class User(AbstractUser):
         max_length=MAX_LENGTH_USERNAME,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
-                message=('Поле \'username\' может содержать'
-                         'только буквы и цифры.')
+                regex=USERNAME_REGEX,
+                message=USER_NAME_INVALID_MSG,
             ),
         ],
     )
     email = models.EmailField(
-        verbose_name='email',
-        unique=True,
+        'Почта',
         max_length=MAX_LENGTH_EMAIL,
-    )
-    first_name = models.CharField(
-        verbose_name='Имя',
-        max_length=MAX_LENGTH_NAME,
-    )
-    last_name = models.CharField(
-        verbose_name='Фамилия',
-        max_length=MAX_LENGTH_NAME,
+        unique=True,
     )
     bio = models.CharField(
-        verbose_name='Био',
+        'Био',
         max_length=MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
-        verbose_name='Роль',
+        'Роль',
+        max_length=MAX_LENGTH_ROLE,
         choices=ROLE_CHOICES,
         default=USER,
-        max_length=MAX_LENGTH_ROLE,
     )
     confirmation_code = models.CharField(
         verbose_name='Самый секретный код',
@@ -149,7 +149,6 @@ class Review(models.Model):
     """Модель отзыва для произведения."""
 
     text = models.TextField(
-        max_length=500,
         verbose_name='Текст отзыва'
     )
     author = models.ForeignKey(
@@ -185,7 +184,6 @@ class Comment(models.Model):
     """Модель комментария к отзыву."""
 
     text = models.TextField(
-        max_length=250,
         verbose_name='Текст комментария'
     )
     author = models.ForeignKey(
