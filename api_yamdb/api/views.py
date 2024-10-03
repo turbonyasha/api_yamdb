@@ -27,7 +27,8 @@ from .serializers import (
     AuthSerializer,
     GetTokenSerializer,
     UserSerializer,
-    ReviewSerializer
+    ReviewSerializer,
+    CommentSerializer
 )
 
 
@@ -182,3 +183,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 "Вы уже оставили отзыв на это произведение."
             )
         serializer.save(author=self.request.user, title=self.get_title())
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Представление для реализации операций
+    GET, POST, PATCH, DELETE
+    для модели комментариев к отзывам.
+    """
+    serializer_class = CommentSerializer
+    permission_classes = [ReviewCommentSectionPermissions]
+
+    def get_title(self):
+        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+
+    def get_review(self):
+        return get_object_or_404(Review, pk=self.kwargs['review_id'])
+
+    def get_queryset(self):
+        return self.get_review.comments.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, review=self.get_review())

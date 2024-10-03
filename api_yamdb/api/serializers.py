@@ -86,6 +86,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
 
+    def create(self, validated_data):
+        validated_data.pop('author', None)
+        return super().create(validated_data)
+
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
@@ -95,6 +99,10 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data.pop('author', None)
+        return super().create(validated_data)
 
 
 class TitleSerializer(serializers.ModelSerializer):
