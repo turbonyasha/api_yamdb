@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     UserViewSet,
+    ReviewViewSet,
     register_user,
     get_user_token,
 )
@@ -13,6 +14,11 @@ router_v1.register(
     'users',
     UserViewSet,
     basename='users'
+)
+router_v1.register(
+    r'titles/(?P<title_id>\d+)/reviews/',
+    ReviewViewSet,
+    basename='reviews'
 )
 
 url_auth = [

@@ -62,6 +62,7 @@ class GetTokenSerializer(serializers.ModelSerializer):
             'confirmation_code',
         )
 
+
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
