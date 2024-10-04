@@ -8,8 +8,12 @@ from reviews.constants import (
     MAX_LENGTH_BIO,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
+    MAX_LENGTH_ROLE,
     MAX_LENGTH_USERNAME,
     MAX_LENGTH_UUID,
+    MAX_LENGTH_UUID,
+    MAX_CONTENT_NAME,
+    MAX_CONTENT_SLUG,
     ROLE_CHOICES,
     USER,
     USER_NAME_INVALID_MSG,
@@ -24,8 +28,15 @@ class NameSlugModel(models.Model):
     Представление объекта класса тоже по полю названия.
     """
 
-    name = models.CharField(max_length=50, verbose_name='Название')
-    slug = models.SlugField(unique=True, verbose_name='Слаг')
+    name = models.CharField(
+        max_length=MAX_CONTENT_NAME,
+        verbose_name='Название'
+    )
+    slug = models.SlugField(
+        max_length=MAX_CONTENT_SLUG,
+        unique=True,
+        verbose_name='Слаг'
+    )
 
     class Meta:
         abstract = True
@@ -55,20 +66,18 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории."""
 
     name = models.CharField(
-        max_length=200, verbose_name='Название произведения'
+        max_length=MAX_CONTENT_NAME, verbose_name='Название произведения'
     )
     year = models.IntegerField(verbose_name='Год создания')
     category = models.ForeignKey(
         Category,
         related_name='titles',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         verbose_name='Категория',
-        null=True,
     )
     genres = models.ManyToManyField(
         Genre,
         through='GenreTitle',
-        blank=True,
         verbose_name='Жанр'
     )
     description = models.TextField(verbose_name='Описание', null=True)
@@ -85,8 +94,8 @@ class Title(models.Model):
 class GenreTitle(models.Model):
     """Промежуточная модель для произведений и жанров."""
 
-    genre_id = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    title_id = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
 
 class User(AbstractUser):

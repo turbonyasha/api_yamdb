@@ -1,5 +1,6 @@
 
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     exceptions,
     filters,
@@ -20,13 +21,16 @@ from api.utilits import (
     is_valid_confirmation_code,
     send_confirmation_code
 )
-from reviews.models import User, Review, Title, Comment
-from .permissions import AdminOnlyPermission, ReviewCommentSectionPermissions
+from reviews.models import User, Category, Genre, Title, Comment, Review
+from .permissions import AdminOnlyPermission, ReviewCommentSectionPermissions, AdminUserPermission
 from .serializers import (
     AdminSerializer,
     AuthSerializer,
     GetTokenSerializer,
     UserSerializer,
+    GenreSerializer,
+    TitleSerializer,
+    CategorySerializer,
     ReviewSerializer,
     CommentSerializer
 )
@@ -157,6 +161,30 @@ def get_user_token(request):
         },
         status=status.HTTP_200_OK
     )
+
+
+class CategoryGenreViewSet(viewsets.ModelViewSet):
+    permission_classes = (AdminUserPermission,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class GenreViewSet(CategoryGenreViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+
+
+class CategoryViewSet(CategoryGenreViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (AdminUserPermission,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category__slug', 'genre__slug,', 'name', 'year')
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

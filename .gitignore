@@ -148,4 +148,6 @@ dmypy.json
 # папки со статикой и медиа
 media/
 
+api_yamdb/reviews/migrations/0002_auto_20241003_2047.py
+
 api_yamdb/reviews/migrations/
