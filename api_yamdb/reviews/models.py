@@ -76,7 +76,7 @@ class Title(models.Model):
         verbose_name='Категория',
         default=None
     )
-    genres = models.ManyToManyField(
+    genre = models.ManyToManyField(
         Genre,
         through='GenreTitle',
         verbose_name='Жанр'
@@ -90,6 +90,12 @@ class Title(models.Model):
         verbose_name = 'произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('category',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'category'],
+                name='unique_name_category'
+            )
+        ]
 
 
 class GenreTitle(models.Model):

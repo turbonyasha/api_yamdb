@@ -1,10 +1,13 @@
 
 from rest_framework import serializers
 
-from reviews.models import Category, Comment, Genre, Review, Title, User
+from reviews.models import (
+    Category, Comment, Genre, Review, Title, GenreTitle, User
+)
 
 from django.core.validators import RegexValidator
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from reviews.constants import (
     MAX_LENGTH_EMAIL,
@@ -12,7 +15,8 @@ from reviews.constants import (
     USER_NAME_INVALID_MSG,
     USERNAME_REGEX,
     SLUG_REGEX,
-    SLUG_INVALID_MSG
+    SLUG_INVALID_MSG,
+    MAX_CONTENT_SLUG
 )
 
 
@@ -66,31 +70,18 @@ class GetTokenSerializer(serializers.ModelSerializer):
         )
 
 
-class CategoryGenreSerializer(serializers.ModelSerializer):
-    slug = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='slug',
-        validators=[
-            RegexValidator(
-                regex=SLUG_REGEX,
-                message=SLUG_INVALID_MSG,
-            ),
-        ],
-    )
-
-
-class CategorySerializer(CategoryGenreSerializer):
+class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        exclude = ['id']
+        exclude = ['id',]
 
 
-class GenreSerializer(CategoryGenreSerializer):
+class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        exclude = ['id']
+        exclude = ['id',]
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -132,3 +123,31 @@ class TitleSerializer(serializers.ModelSerializer):
             ) / len(reviews))
         else:
             return 0
+
+    def create(self, validated_data):
+        genres = validated_data.pop('genre')
+        title = Title.objects.create(**validated_data)
+        for genre in genres:
+            current_genre, _ = Genre.objects.get_or_create(**genre)
+            GenreTitle.objects.create(
+                genre=current_genre,
+                title=title,
+            )
+        return title
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.year = validated_data.get('year', instance.year)
+        instance.category = validated_data.get('category', instance.category)
+        instance.description = validated_data.get(
+            'description', instance.description
+        )
+        genres_data = validated_data.pop('genre')
+        lst = []
+        for genre in genres_data:
+            current_genre, _ = Genre.objects.get_or_create(**genre)
+            lst.append(current_genre)
+        instance.achievements.set(lst)
+
+        instance.save()
+        return instance

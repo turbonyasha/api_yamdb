@@ -190,7 +190,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (AdminUserPermission,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category__slug', 'genres__slug', 'name', 'year')
+    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
