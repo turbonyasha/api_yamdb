@@ -13,6 +13,7 @@ from rest_framework.decorators import (
     api_view,
     permission_classes
 )
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -174,6 +175,12 @@ class CategoryGenreViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
 
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class GenreViewSet(CategoryGenreViewSet):
     queryset = Genre.objects.all()
@@ -188,7 +195,8 @@ class CategoryViewSet(CategoryGenreViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (AdminUserPermission,)
+    # permission_classes = (AdminUserPermission,)
+    permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
