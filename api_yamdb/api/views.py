@@ -21,8 +21,12 @@ from api.utilits import (
     is_valid_confirmation_code,
     send_confirmation_code
 )
-from reviews.models import User, Category, Genre, Title, Comment, Review
-from .permissions import AdminOnlyPermission, ReviewCommentSectionPermissions, AdminUserPermission
+from reviews.models import User, Category, Genre, Title, Review
+from .permissions import (
+    AdminOnlyPermission,
+    ReviewCommentSectionPermissions,
+    AdminUserPermission
+)
 from .serializers import (
     AdminSerializer,
     AuthSerializer,
@@ -167,6 +171,8 @@ class CategoryGenreViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminUserPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'slug'
 
 
 class GenreViewSet(CategoryGenreViewSet):
@@ -184,7 +190,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (AdminUserPermission,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category__slug', 'genre__slug,', 'name', 'year')
+    filterset_fields = ('category__slug', 'genres__slug', 'name', 'year')
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

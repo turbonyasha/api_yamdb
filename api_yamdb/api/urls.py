@@ -5,6 +5,9 @@ from .views import (
     UserViewSet,
     CommentViewSet,
     ReviewViewSet,
+    TitleViewSet,
+    CategoryViewSet,
+    GenreViewSet,
     register_user,
     get_user_token,
 )
@@ -17,14 +20,29 @@ router_v1.register(
     basename='users'
 )
 router_v1.register(
-    r'titles/(?P<title_id>\d+)/reviews/',
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+    CommentViewSet,
+    basename='comments'
+)
+router_v1.register(
+    r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet,
     basename='reviews'
 )
 router_v1.register(
-    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments/',
-    CommentViewSet,
-    basename='comments'
+    r'titles',
+    TitleViewSet,
+    basename='titles'
+)
+router_v1.register(
+    r'categories',
+    CategoryViewSet,
+    basename='categories'
+)
+router_v1.register(
+    r'genres',
+    GenreViewSet,
+    basename='genres'
 )
 
 url_auth = [
