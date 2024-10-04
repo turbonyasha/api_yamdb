@@ -1,6 +1,8 @@
+
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
+    exceptions,
     filters,
     permissions,
     status,
@@ -19,8 +21,8 @@ from api.utilits import (
     is_valid_confirmation_code,
     send_confirmation_code
 )
-from reviews.models import User, Category, Genre, Title
-from .permissions import AdminOnlyPermission, AdminUserPermission
+from reviews.models import User, Category, Genre, Title, Comment, Review
+from .permissions import AdminOnlyPermission, ReviewCommentSectionPermissions, AdminUserPermission
 from .serializers import (
     AdminSerializer,
     AuthSerializer,
@@ -28,7 +30,9 @@ from .serializers import (
     UserSerializer,
     GenreSerializer,
     TitleSerializer,
-    CategorySerializer
+    CategorySerializer,
+    ReviewSerializer,
+    CommentSerializer
 )
 
 
@@ -181,3 +185,51 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminUserPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category__slug', 'genre__slug,', 'name', 'year')
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    Представление для реализации операций
+    GET, POST, PATCH, DELETE
+    для модели отзывов.
+    """
+    serializer_class = ReviewSerializer
+    permission_classes = [ReviewCommentSectionPermissions]
+
+    def get_title(self):
+        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+
+    def get_queryset(self):
+        return self.get_title.reviews.all()
+
+    def perform_create(self, serializer):
+        if Review.objects.filter(
+            title_id=self.kwargs.get('title_id'),
+            author=self.request.user
+        ).exists():
+            raise exceptions.ValidationError(
+                "Вы уже оставили отзыв на это произведение."
+            )
+        serializer.save(author=self.request.user, title=self.get_title())
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Представление для реализации операций
+    GET, POST, PATCH, DELETE
+    для модели комментариев к отзывам.
+    """
+    serializer_class = CommentSerializer
+    permission_classes = [ReviewCommentSectionPermissions]
+
+    def get_title(self):
+        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+
+    def get_review(self):
+        return get_object_or_404(Review, pk=self.kwargs['review_id'])
+
+    def get_queryset(self):
+        return self.get_review.comments.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, review=self.get_review())
