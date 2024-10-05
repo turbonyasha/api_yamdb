@@ -109,6 +109,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'email.email.ru'
 EMAIL_HOST_USER = 'email@email.com'
 EMAIL_HOST_PASSWORD = 'email_password'

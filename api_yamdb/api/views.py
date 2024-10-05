@@ -1,4 +1,3 @@
-
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
@@ -154,7 +153,8 @@ def get_user_token(request):
     ):
         return Response(
             {
-                'error': 'Неверный код подтверждения, товарищ.'
+                'error': 'Неверный код подтверждения, '
+                         'товарищ.'
             },
             status=status.HTTP_400_BAD_REQUEST
         )
