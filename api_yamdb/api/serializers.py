@@ -129,8 +129,7 @@ class TitleSerializer(serializers.ModelSerializer):
             return
 
     def validate_year(self, creation_year):
-        year = dt.today().year
-        if creation_year > year:
+        if creation_year > dt.today().year:
             raise serializers.ValidationError(
                 'Произведение не может быть создано в будущем!'
             )
