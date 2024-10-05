@@ -75,7 +75,6 @@ class Title(models.Model):
         related_name='titles',
         on_delete=models.CASCADE,
         verbose_name='Категория',
-        default=None,
     )
     genre = models.ManyToManyField(
         Genre,

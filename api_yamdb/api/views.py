@@ -1,4 +1,8 @@
-
+from api.utilits import (
+    create_user,
+    is_valid_confirmation_code,
+    send_confirmation_code
+)
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
@@ -13,15 +17,10 @@ from rest_framework.decorators import (
     api_view,
     permission_classes
 )
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from api.utilits import (
-    create_user,
-    is_valid_confirmation_code,
-    send_confirmation_code
-)
+from reviews.constants import ADMIN
 from reviews.models import User, Category, Genre, Title, Review
 from .permissions import (
     AdminOnlyPermission,
@@ -39,6 +38,7 @@ from .serializers import (
     ReviewSerializer,
     CommentSerializer
 )
+from .filters import TitleFilter
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -195,10 +195,15 @@ class CategoryViewSet(CategoryGenreViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    # permission_classes = (AdminUserPermission,)
-    permission_classes = (AllowAny,)
+    permission_classes = (AdminUserPermission,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+    filterset_class = TitleFilter
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PUT' or not request.user.role == ADMIN:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        else:
+            return super().update(request, *args, **kwargs)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

@@ -1,6 +1,5 @@
 from datetime import datetime as dt
 
-# from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import (
@@ -103,8 +102,15 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True, read_only=True)
-    category = CategorySerializer(read_only=True)
+    genre = serializers.SlugRelatedField(
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug'
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -113,14 +119,14 @@ class TitleSerializer(serializers.ModelSerializer):
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
-    def get_rating(self, obj):
-        reviews = obj.reviews.all()
+    def get_rating(self, title):
+        reviews = title.reviews.all()
         if reviews:
             return int(sum(
                 review.score for review in reviews
             ) / len(reviews))
         else:
-            return 0
+            return
 
     def validate_year(self, creation_year):
         year = dt.today().year
@@ -130,41 +136,10 @@ class TitleSerializer(serializers.ModelSerializer):
             )
         return creation_year
 
-    # def validate_genre(self, category):
-    #     return get_object_or_404(Category, slug=category)
-
-    # def validate_category(self, genres):
-    #     all_genres = [
-    #         get_object_or_404(Category, slug=genre) for genre in genres
-    #     ]
-    #     return all_genres
-
-    # def create(self, validated_data):
-    #     genres = self.initial_data['genre']
-    #     category = get_object_or_404(
-    #         Category, slug=self.initial_data['category']
-    #     )
-    #     checked = []
-    #     for genre in genres:
-    #         cur_genre = get_object_or_404(Genre, slug=genre)
-    #         checked.append(cur_genre)
-    #     validated_data['category'] = category
-    #     validated_data['genre'] = checked
-    #     return Title.objects.create(**validated_data)
-
-    # def update(self, instance, validated_data):
-    #     instance.name = validated_data.get('name', instance.name)
-    #     instance.year = validated_data.get('year', instance.year)
-    #     instance.category = validated_data.get('category', instance.category)
-    #     instance.description = validated_data.get(
-    #         'description', instance.description
-    #     )
-    #     genres_data = validated_data.pop('genre')
-    #     lst = []
-    #     for genre in genres_data:
-    #         current_genre, _ = Genre.objects.get_or_create(**genre)
-    #         lst.append(current_genre)
-    #     instance.achievements.set(lst)
-
-    #     instance.save()
-    #     return instance
+    def to_representation(self, title):
+        representation = super().to_representation(title)
+        representation['category'] = CategorySerializer(title.category).data
+        representation['genre'] = GenreSerializer(
+            title.genre.all(), many=True
+        ).data
+        return representation

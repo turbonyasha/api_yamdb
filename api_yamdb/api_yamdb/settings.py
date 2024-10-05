@@ -112,3 +112,4 @@ SIMPLE_JWT = {
 EMAIL_HOST = 'email.email.ru'
 EMAIL_HOST_USER = 'email@email.com'
 EMAIL_HOST_PASSWORD = 'email_password'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
