@@ -1,3 +1,32 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    User
+)
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'role',
+        'bio',
+    )
+    search_fields = ('username', 'role')
+    list_filter = ('username',)
+    empty_value_display = '-empty-'
+
+
+admin.site.register(Category)
+admin.site.register(Genre)
+admin.site.register(Title)
+admin.site.register(Comment)
+admin.site.register(Review)
