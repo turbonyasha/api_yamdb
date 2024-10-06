@@ -20,7 +20,7 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.constants import ADMIN, MODERATOR
+import reviews.constants as cs
 from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (
@@ -114,9 +114,7 @@ def register_user(request):
     if not user:
         return Response(
             {
-                'error': 'Указанный username '
-                         'или email существует!'
-                         'Ты нас не обманешь, мошенник.'
+                'error': cs.USER_REGISTER_ERROR
             },
             status=status.HTTP_400_BAD_REQUEST
         )
@@ -124,8 +122,7 @@ def register_user(request):
     if user.username == 'me':
         return Response(
             {
-                'error': 'Недопустимое имя пользователя, '
-                         'придумай что-нибудь еще.'
+                'error': cs.USER_REGISTER_NAME_ERROR
             },
             status=status.HTTP_400_BAD_REQUEST
         )
@@ -159,8 +156,7 @@ def get_user_token(request):
     ):
         return Response(
             {
-                'error': 'Неверный код подтверждения, '
-                         'товарищ.'
+                'error': cs.CONFIRMATION_CODE_ERROR
             },
             status=status.HTTP_400_BAD_REQUEST
         )
@@ -209,7 +205,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_class = TitleFilter
 
     def update(self, request, *args, **kwargs):
-        if request.method == 'PUT' or not request.user.role == ADMIN:
+        if request.method == 'PUT' or not request.user.role == cs.ADMIN:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         else:
             return super().update(request, *args, **kwargs)

@@ -34,7 +34,8 @@ class ReviewCommentSectionPermissions(BasePermission):
     """
     GET - без токена,
     POST - аутентифицированному юзеру,
-    PATCH/DELETE - автору или админсоставу.
+    PATCH/DELETE - автору или админсоставу,
+    PUT - запрещен.
     """
     def has_permission(self, request, view):
         if request.method == 'GET':

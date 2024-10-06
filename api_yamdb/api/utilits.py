@@ -3,6 +3,7 @@ from django.core.mail import send_mail
 from django.db import IntegrityError
 
 from api_yamdb import settings
+import reviews.constants as cs
 from reviews.models import User
 
 
@@ -28,9 +29,9 @@ def send_confirmation_code(user):
     )
     send_mail(
         subject='Самый секретный код для входа',
-        message=f'Не говори никому этот '
-                f'код для входа: {confirmation_code},'
-                f'молю...',
+        message=cs.SEND_MAIL_MESSAGE.format(
+            confirmation_code=confirmation_code
+        ),
         from_email=settings.EMAIL_HOST_USER,
         recipient_list=[user.email],
     )
