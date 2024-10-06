@@ -28,3 +28,14 @@ SLUG_INVALID_MSG = (
     'и подчеркивание.'
 )
 
+VALIDATE_YEAR_ERROR = 'Произведение не может быть создано в будущем!'
+SEND_MAIL_MESSAGE = (
+    'Не говори никому этот код для входа: {confirmation_code}, молю...'
+)
+USER_REGISTER_ERROR = (
+    'Указанный username или email существует! Ты нас не обманешь, мошенник.'
+)
+USER_REGISTER_NAME_ERROR = (
+    'Недопустимое имя пользователя, придумай что-нибудь еще.'
+)
+CONFIRMATION_CODE_ERROR = 'Неверный код подтверждения, товарищ.'

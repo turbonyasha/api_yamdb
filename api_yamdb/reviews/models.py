@@ -4,19 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
-from reviews.constants import (
-    MAX_LENGTH_BIO,
-    MAX_LENGTH_EMAIL,
-    MAX_LENGTH_ROLE,
-    MAX_LENGTH_USERNAME,
-    MAX_LENGTH_UUID,
-    MAX_CONTENT_NAME,
-    MAX_CONTENT_SLUG,
-    ROLE_CHOICES,
-    USER,
-    USER_NAME_INVALID_MSG,
-    USERNAME_REGEX,
-)
+import reviews.constants as cs
 
 
 class NameSlugModel(models.Model):
@@ -27,11 +15,11 @@ class NameSlugModel(models.Model):
     """
 
     name = models.CharField(
-        max_length=MAX_CONTENT_NAME,
+        max_length=cs.MAX_CONTENT_NAME,
         verbose_name='Название'
     )
     slug = models.SlugField(
-        max_length=MAX_CONTENT_SLUG,
+        max_length=cs.MAX_CONTENT_SLUG,
         unique=True,
         verbose_name='Слаг'
     )
@@ -65,7 +53,7 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории."""
 
     name = models.CharField(
-        max_length=MAX_CONTENT_NAME, verbose_name='Название произведения'
+        max_length=cs.MAX_CONTENT_NAME, verbose_name='Название произведения'
     )
     year = models.IntegerField(verbose_name='Год создания')
     category = models.ForeignKey(
@@ -109,35 +97,35 @@ class User(AbstractUser):
     username = models.CharField(
         verbose_name='Пользователь',
         unique=True,
-        max_length=MAX_LENGTH_USERNAME,
+        max_length=cs.MAX_LENGTH_USERNAME,
         validators=[
             RegexValidator(
-                regex=USERNAME_REGEX,
-                message=USER_NAME_INVALID_MSG,
+                regex=cs.USERNAME_REGEX,
+                message=cs.USER_NAME_INVALID_MSG,
             ),
         ],
     )
     email = models.EmailField(
         verbose_name='Почта',
-        max_length=MAX_LENGTH_EMAIL,
+        max_length=cs.MAX_LENGTH_EMAIL,
         unique=True,
     )
     bio = models.CharField(
         verbose_name='Био',
-        max_length=MAX_LENGTH_BIO,
+        max_length=cs.MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
         verbose_name='Роль',
-        max_length=MAX_LENGTH_ROLE,
-        choices=ROLE_CHOICES,
-        default=USER,
+        max_length=cs.MAX_LENGTH_ROLE,
+        choices=cs.ROLE_CHOICES,
+        default=cs.USER,
     )
     confirmation_code = models.CharField(
         verbose_name='Самый секретный код',
         default=uuid.uuid4,
-        max_length=MAX_LENGTH_UUID,
+        max_length=cs.MAX_LENGTH_UUID,
         editable=False,
         unique=True,
         auto_created=True
@@ -178,7 +166,7 @@ class Review(models.Model):
     )
 
     def __str__(self):
-        return f'Отзыв на {self.title.name} от {self.author.username}'
+        return f'Отзыв на {self.title.name[:20]} от {self.author.username}'
 
     class Meta:
         verbose_name = 'отзыв'
