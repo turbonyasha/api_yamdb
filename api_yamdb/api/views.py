@@ -261,13 +261,17 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Review, pk=self.kwargs['review_id'])
 
     def get_queryset(self):
-        return self.get_review.comments.all()
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
+        review = self.get_review()
+        serializer.save(
+            author=self.request.user,
+            review=review,
+            title=review.title)
 
     def update(self, request, *args, **kwargs):
-        if request.method == 'PUT' or request.user.role not in [ADMIN, MODERATOR]:
+        if request.method == 'PUT':
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         else:
             return super().update(request, *args, **kwargs)
