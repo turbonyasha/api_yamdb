@@ -72,7 +72,6 @@ class Title(models.Model):
     year = models.IntegerField(verbose_name='Год создания')
     category = models.ForeignKey(
         Category,
-        related_name='titles',
         on_delete=models.CASCADE,
         verbose_name='Категория',
     )
@@ -87,6 +86,7 @@ class Title(models.Model):
         return self.name[:20]
 
     class Meta:
+        default_related_name = 'titles'
         verbose_name = 'произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('category',)
@@ -170,7 +170,7 @@ class Review(models.Model):
         choices=[(i, str(i)) for i in range(1, 11)]
     )
     pub_date = models.DateTimeField(
-        auto_now=True,
+        auto_now_add=True,
         verbose_name='Дата создания'
     )
     title = models.ForeignKey(
