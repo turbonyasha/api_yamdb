@@ -155,7 +155,8 @@ def get_user_token(request):
     ):
         return Response(
             {
-                'error': 'Неверный код подтверждения, товарищ.'
+                'error': 'Неверный код подтверждения, '
+                         'товарищ.'
             },
             status=status.HTTP_400_BAD_REQUEST
         )

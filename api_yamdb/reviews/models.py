@@ -8,9 +8,7 @@ from reviews.constants import (
     MAX_LENGTH_BIO,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    MAX_LENGTH_ROLE,
     MAX_LENGTH_USERNAME,
-    MAX_LENGTH_UUID,
     MAX_LENGTH_UUID,
     MAX_CONTENT_NAME,
     MAX_CONTENT_SLUG,
@@ -120,18 +118,18 @@ class User(AbstractUser):
         ],
     )
     email = models.EmailField(
-        'Почта',
+        verbose_name='Почта',
         max_length=MAX_LENGTH_EMAIL,
         unique=True,
     )
     bio = models.CharField(
-        'Био',
+        verbose_name='Био',
         max_length=MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
-        'Роль',
+        verbose_name='Роль',
         max_length=MAX_LENGTH_ROLE,
         choices=ROLE_CHOICES,
         default=USER,
