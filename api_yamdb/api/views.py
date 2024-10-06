@@ -20,7 +20,7 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.constants import ADMIN
+from reviews.constants import ADMIN, MODERATOR
 from reviews.models import User, Category, Genre, Title, Review
 from .permissions import (
     AdminOnlyPermission,
@@ -219,7 +219,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title.reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         if Review.objects.filter(
@@ -230,6 +230,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 "Вы уже оставили отзыв на это произведение."
             )
         serializer.save(author=self.request.user, title=self.get_title())
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PUT':
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        else:
+            return super().update(request, *args, **kwargs)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -252,3 +258,9 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, review=self.get_review())
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PUT' or request.user.role not in [ADMIN, MODERATOR]:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        else:
+            return super().update(request, *args, **kwargs)

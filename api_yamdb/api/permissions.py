@@ -2,6 +2,9 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from reviews.constants import ADMIN, MODERATOR
 
+from rest_framework.response import Response
+from rest_framework import status
+
 
 class AdminUserPermission(BasePermission):
     """
@@ -47,3 +50,5 @@ class ReviewCommentSectionPermissions(BasePermission):
                         and view.get_object().author == request.user)
                 )
             )
+        if request.method == 'PUT':
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
