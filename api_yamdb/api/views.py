@@ -22,6 +22,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.constants import ADMIN, MODERATOR
 from reviews.models import User, Category, Genre, Title, Review
+from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
     ReviewCommentSectionPermissions,
@@ -38,10 +39,13 @@ from .serializers import (
     ReviewSerializer,
     CommentSerializer
 )
-from .filters import TitleFilter
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    Представление для реализации операций для
+    кастомной модели пользователя.
+    """
     queryset = User.objects.all()
     serializer_class = AdminSerializer
     lookup_field = 'username'
@@ -170,6 +174,7 @@ def get_user_token(request):
 
 
 class CategoryGenreViewSet(viewsets.ModelViewSet):
+    """Представление для работы с категориями и жанрами."""
     permission_classes = (AdminUserPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -184,16 +189,19 @@ class CategoryGenreViewSet(viewsets.ModelViewSet):
 
 
 class GenreViewSet(CategoryGenreViewSet):
+    """Представление для работы только с жанрами."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
 class CategoryViewSet(CategoryGenreViewSet):
+    """Представление для работы только с категориями."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Представление для работы с произведениями."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (AdminUserPermission,)
@@ -210,8 +218,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """
     Представление для реализации операций
-    GET, POST, PATCH, DELETE
-    для модели отзывов.
+    для модели отзывов на произведени.
     """
     serializer_class = ReviewSerializer
     permission_classes = [ReviewCommentSectionPermissions]
@@ -242,8 +249,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """
     Представление для реализации операций
-    GET, POST, PATCH, DELETE
-    для модели комментариев к отзывам.
+    для модели комментариев к отзывам на произведения.
     """
     serializer_class = CommentSerializer
     permission_classes = [ReviewCommentSectionPermissions]
