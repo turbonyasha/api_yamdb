@@ -219,7 +219,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title.reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         if Review.objects.filter(
