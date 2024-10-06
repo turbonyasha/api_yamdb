@@ -38,7 +38,6 @@ class NameSlugModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ('name',)
 
     def __str__(self):
         return self.name[:10]
@@ -50,6 +49,7 @@ class Category(NameSlugModel):
     class Meta:
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
+        ordering = ('name',)
 
 
 class Genre(NameSlugModel):
@@ -58,6 +58,7 @@ class Genre(NameSlugModel):
     class Meta:
         verbose_name = 'жанр'
         verbose_name_plural = 'Жанры'
+        ordering = ('name',)
 
 
 class Title(models.Model):
@@ -69,15 +70,13 @@ class Title(models.Model):
     year = models.IntegerField(verbose_name='Год создания')
     category = models.ForeignKey(
         Category,
-        related_name='titles',
         on_delete=models.CASCADE,
         verbose_name='Категория',
-        default=None
     )
     genre = models.ManyToManyField(
         Genre,
         through='GenreTitle',
-        verbose_name='Жанр'
+        verbose_name='Жанр',
     )
     description = models.TextField(verbose_name='Описание', null=True)
 
@@ -85,6 +84,7 @@ class Title(models.Model):
         return self.name[:20]
 
     class Meta:
+        default_related_name = 'titles'
         verbose_name = 'произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('category',)
@@ -168,7 +168,7 @@ class Review(models.Model):
         choices=[(i, str(i)) for i in range(1, 11)]
     )
     pub_date = models.DateTimeField(
-        auto_now=True,
+        auto_now_add=True,
         verbose_name='Дата создания'
     )
     title = models.ForeignKey(

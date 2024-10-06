@@ -1,3 +1,8 @@
+from api.utilits import (
+    create_user,
+    is_valid_confirmation_code,
+    send_confirmation_code
+)
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
@@ -15,11 +20,7 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from api.utilits import (
-    create_user,
-    is_valid_confirmation_code,
-    send_confirmation_code
-)
+from reviews.constants import ADMIN
 from reviews.models import User, Category, Genre, Title, Review
 from .permissions import (
     AdminOnlyPermission,
@@ -37,6 +38,7 @@ from .serializers import (
     ReviewSerializer,
     CommentSerializer
 )
+from .filters import TitleFilter
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -174,6 +176,12 @@ class CategoryGenreViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
 
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class GenreViewSet(CategoryGenreViewSet):
     queryset = Genre.objects.all()
@@ -190,7 +198,13 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (AdminUserPermission,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+    filterset_class = TitleFilter
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PUT' or not request.user.role == ADMIN:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        else:
+            return super().update(request, *args, **kwargs)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -206,7 +220,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title.reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         if Review.objects.filter(

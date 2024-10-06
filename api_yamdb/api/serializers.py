@@ -1,22 +1,19 @@
+from datetime import datetime as dt
 
 from rest_framework import serializers
 
 from reviews.models import (
-    Category, Comment, Genre, Review, Title, GenreTitle, User
+    Category, Comment, Genre, Review, Title, User
 )
 
 from django.core.validators import RegexValidator
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from reviews.constants import (
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_USERNAME,
     USER_NAME_INVALID_MSG,
     USERNAME_REGEX,
-    SLUG_REGEX,
-    SLUG_INVALID_MSG,
-    MAX_CONTENT_SLUG
 )
 
 
@@ -105,8 +102,15 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
+    genre = serializers.SlugRelatedField(
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug'
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -115,39 +119,26 @@ class TitleSerializer(serializers.ModelSerializer):
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
-    def get_rating(self, obj):
-        reviews = obj.reviews.all()
+    def get_rating(self, title):
+        reviews = title.reviews.all()
         if reviews:
             return int(sum(
                 review.score for review in reviews
             ) / len(reviews))
         else:
-            return 0
+            return
 
-    def create(self, validated_data):
-        genres = validated_data.pop('genre')
-        title = Title.objects.create(**validated_data)
-        for genre in genres:
-            current_genre, _ = Genre.objects.get_or_create(**genre)
-            GenreTitle.objects.create(
-                genre=current_genre,
-                title=title,
+    def validate_year(self, creation_year):
+        if creation_year > dt.today().year:
+            raise serializers.ValidationError(
+                'Произведение не может быть создано в будущем!'
             )
-        return title
+        return creation_year
 
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.year = validated_data.get('year', instance.year)
-        instance.category = validated_data.get('category', instance.category)
-        instance.description = validated_data.get(
-            'description', instance.description
-        )
-        genres_data = validated_data.pop('genre')
-        lst = []
-        for genre in genres_data:
-            current_genre, _ = Genre.objects.get_or_create(**genre)
-            lst.append(current_genre)
-        instance.achievements.set(lst)
-
-        instance.save()
-        return instance
+    def to_representation(self, title):
+        representation = super().to_representation(title)
+        representation['category'] = CategorySerializer(title.category).data
+        representation['genre'] = GenreSerializer(
+            title.genre.all(), many=True
+        ).data
+        return representation
