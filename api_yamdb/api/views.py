@@ -1,3 +1,5 @@
+import random
+
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
@@ -22,7 +24,13 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 import reviews.constants as cs
-from reviews.models import User, Category, Genre, Title, Review
+from reviews.models import (
+    User,
+    Category,
+    Genre,
+    Title,
+    Review
+)
 from .constants import USERNAME_ME, CONFIRMATION_CODE_ERROR
 from .filters import TitleFilter
 from .permissions import (
@@ -113,7 +121,11 @@ def register_user(request):
                 {'error': 'Неизвестная ошибка.'}
             )
 
-    send_confirmation_code(user)
+    confirmation_code = str(random.randint(0, 999_999))
+    user.confirmation_code = confirmation_code
+    user.save()
+
+    send_confirmation_code(user, confirmation_code)
     return Response(
         serializer.data,
         status=status.HTTP_200_OK

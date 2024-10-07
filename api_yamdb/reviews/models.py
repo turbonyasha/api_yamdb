@@ -1,10 +1,8 @@
-import uuid
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
-import reviews.constants as cs
+import reviews.constants as cs  # 1.6
 from api.utilits import validate_username_chars
 from reviews.utilits import calculate_max_length
 
@@ -125,12 +123,10 @@ class User(AbstractUser):
         default=cs.USER,
     )
     confirmation_code = models.CharField(
-        verbose_name='Самый секретный код',
-        default=uuid.uuid4,
-        max_length=cs.MAX_LENGTH_UUID,
-        editable=False,
-        unique=True,
-        auto_created=True
+        verbose_name='Код подтверждения',
+        max_length=6,
+        null=True,
+        blank=True,
     )
 
     def clean(self):

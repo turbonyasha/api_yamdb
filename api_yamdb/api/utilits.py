@@ -1,6 +1,5 @@
 import re
 
-from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 
@@ -9,11 +8,8 @@ from api_yamdb import settings
 import reviews.constants as cs
 
 
-def send_confirmation_code(user):
+def send_confirmation_code(user, confirmation_code):
     """Отправляет код подтверждения на email пользователя."""
-    confirmation_code = default_token_generator.make_token(
-        user
-    )
     send_mail(
         subject='Самый секретный код для входа',
         message=SEND_MAIL_MESSAGE.format(
