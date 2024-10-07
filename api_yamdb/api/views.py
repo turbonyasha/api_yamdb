@@ -1,12 +1,14 @@
 import random
 
 from django.db import IntegrityError
+from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     exceptions,
     filters,
+    pagination,
     permissions,
     status,
     viewsets
@@ -189,17 +191,14 @@ class CategoryViewSet(CategoryGenreViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).order_by('name')
     serializer_class = TitleSerializer
     permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT' or not request.user.role == ADMIN:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
+    http_method_names = const.HTTP_METHOD_NAMES
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -218,13 +217,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
-        if Review.objects.filter(
-                title_id=self.kwargs.get('title_id'),
-                author=self.request.user
-        ).exists():
-            raise exceptions.ValidationError(
-                "Вы уже оставили отзыв на это произведение."
-            )
         serializer.save(author=self.request.user, title=self.get_title())
 
 

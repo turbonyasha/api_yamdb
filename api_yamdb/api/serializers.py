@@ -1,7 +1,9 @@
 from datetime import datetime as dt
 
-from rest_framework import serializers
+from django.db import IntegrityError
 from django.core.validators import RegexValidator
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 import reviews.constants as const
 from api.constants import MAX_LENGTH_EMAIL
@@ -78,22 +80,37 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    title = serializers.SlugRelatedField(
+        read_only=True, slug_field='name'
+    )
 
     class Meta:
         model = Review
         fields = '__all__'
-        read_only_fields = ('title',)
+
+    def create(self, validated_data):
+        try:
+            return super().create(validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError(
+                'Вы уже оставили отзыв на это произведение.'
+            )
 
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    title = serializers.SlugRelatedField(
+        read_only=True, slug_field='name'
+    )
+    review = serializers.SlugRelatedField(
+        read_only=True, slug_field='text'
+    )
 
     class Meta:
         model = Comment
         fields = '__all__'
-        read_only_fields = ('title', 'review')
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -106,22 +123,13 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         slug_field='slug'
     )
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
         fields = (
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
-
-    def get_rating(self, title):
-        reviews = title.reviews.all()
-        if reviews:
-            return int(sum(
-                review.score for review in reviews
-            ) / len(reviews))
-        else:
-            return
 
     def validate_year(self, creation_year):
         if creation_year > dt.today().year:
