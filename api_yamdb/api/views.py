@@ -1,9 +1,7 @@
 import random
 
-from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
-
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
@@ -21,8 +19,6 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from api.utilits import send_confirmation_code
-import reviews.constants as cs
 from reviews.models import (
     User,
     Category,
@@ -30,7 +26,8 @@ from reviews.models import (
     Title,
     Review
 )
-from .constants import USERNAME_ME, CONFIRMATION_CODE_ERROR
+from reviews.constants import ADMIN
+import api.constants as const
 from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
@@ -48,6 +45,7 @@ from .serializers import (
     UserRegistrationSerializer,
     UserSerializer,
 )
+from .utilits import send_confirmation_code
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -70,7 +68,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['GET', 'PATCH'],
-        url_path=USERNAME_ME,
+        url_path=const.USERNAME_ME,
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
@@ -116,11 +114,11 @@ def register_user(request):
         error_message = str(e).lower()
         if 'email' in error_message:
             raise ValidationError(
-                {'email': cs.EMAIL_REGISTER_ERROR}
+                {'email': const.EMAIL_REGISTER_ERROR}
             )
         elif 'username' in error_message:
             raise ValidationError(
-                {'username': cs.USER_REGISTER_ERROR}
+                {'username': const.USER_REGISTER_ERROR}
             )
         else:
             raise ValidationError(
@@ -158,7 +156,7 @@ def get_user_token(request):
         'confirmation_code'
     ]:
         raise ValidationError(
-            {'confirmation_code': CONFIRMATION_CODE_ERROR}
+            {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
 
     return Response(
@@ -203,7 +201,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_class = TitleFilter
 
     def update(self, request, *args, **kwargs):
-        if request.method == 'PUT' or not request.user.role == cs.ADMIN:
+        if request.method == 'PUT' or not request.user.role == ADMIN:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
         else:
             return super().update(request, *args, **kwargs)

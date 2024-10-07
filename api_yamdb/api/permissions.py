@@ -12,9 +12,11 @@ class AdminPermission(BasePermission):
 
     def has_permission(self, request, view):
         return (
-                request.method in SAFE_METHODS
-                or (request.user.is_authenticated
-                    and request.user.is_admin)
+            request.method in SAFE_METHODS
+            or (
+                request.user.is_authenticated
+                and request.user.is_admin
+            )
         )
 
 
@@ -23,8 +25,8 @@ class AdminOnlyPermission(BasePermission):
 
     def has_permission(self, request, view):
         return (
-                request.user.is_authenticated
-                and request.user.is_admin
+            request.user.is_authenticated
+            and request.user.is_admin
         )
 
 
