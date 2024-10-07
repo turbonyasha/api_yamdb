@@ -1,8 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from rest_framework.response import Response
-from rest_framework import status
-
 
 class AdminPermission(BasePermission):
     """

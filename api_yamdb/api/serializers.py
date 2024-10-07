@@ -1,18 +1,12 @@
-
 from rest_framework import serializers
-
-from datetime import datetime as dt
 from django.db import IntegrityError
 from django.core.validators import RegexValidator
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 
 import reviews.constants as const
 from api.constants import MAX_LENGTH_EMAIL
 from api.utilits import validate_username_chars
-from reviews.models import (
-    Category, Comment, Genre, Review, Title, User
-)
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -115,7 +109,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class TitleReadSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -125,7 +119,6 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         slug_field='slug'
     )
-    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
@@ -133,6 +126,9 @@ class TitleSerializer(serializers.ModelSerializer):
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
+
+class TitleUpdateSerializer(TitleReadSerializer):
+    rating = serializers.FloatField(read_only=True)
 
     def to_representation(self, title):
         representation = super().to_representation(title)
