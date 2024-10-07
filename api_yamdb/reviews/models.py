@@ -1,4 +1,7 @@
+from datetime import datetime as dt
+
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -26,6 +29,7 @@ class NameSlugModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ('name',)
 
     def __str__(self):
         return self.name[:10]
@@ -34,28 +38,36 @@ class NameSlugModel(models.Model):
 class Category(NameSlugModel):
     """Модель категорий."""
 
-    class Meta:
+    class Meta(NameSlugModel.Meta):
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
-        ordering = ('name',)
 
 
 class Genre(NameSlugModel):
     """Модель жанров."""
 
-    class Meta:
+    class Meta(NameSlugModel.Meta):
         verbose_name = 'жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('name',)
 
 
 class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории."""
 
     name = models.CharField(
-        max_length=const.MAX_CONTENT_NAME, verbose_name='Название произведения'
+        max_length=const.MAX_CONTENT_NAME, verbose_name='Название'
     )
-    year = models.IntegerField(verbose_name='Год создания')
+    year = models.IntegerField(
+        verbose_name='Год создания',
+        validators=(
+            MaxValueValidator(
+                dt.today().year,
+                message=const.VALIDATE_YEAR_ERROR.format(
+                    this_year=dt.today().year
+                )
+            ),
+        )
+    )
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
@@ -63,7 +75,6 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
-        through='GenreTitle',
         verbose_name='Жанр',
     )
     description = models.TextField(verbose_name='Описание', null=True)
@@ -75,20 +86,13 @@ class Title(models.Model):
         default_related_name = 'titles'
         verbose_name = 'произведение'
         verbose_name_plural = 'Произведения'
-        ordering = ('category',)
+        ordering = ('category', 'name')
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'category'],
                 name='unique_name_category'
             )
         ]
-
-
-class GenreTitle(models.Model):
-    """Промежуточная модель для произведений и жанров."""
-
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
 
 class User(AbstractUser):

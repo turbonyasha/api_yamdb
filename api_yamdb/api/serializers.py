@@ -1,5 +1,7 @@
-from datetime import datetime as dt
 
+from rest_framework import serializers
+
+from datetime import datetime as dt
 from django.db import IntegrityError
 from django.core.validators import RegexValidator
 from rest_framework import serializers
@@ -131,12 +133,6 @@ class TitleSerializer(serializers.ModelSerializer):
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
-    def validate_year(self, creation_year):
-        if creation_year > dt.today().year:
-            raise serializers.ValidationError(
-                const.VALIDATE_YEAR_ERROR.format(creation_year=creation_year)
-            )
-        return creation_year
 
     def to_representation(self, title):
         representation = super().to_representation(title)

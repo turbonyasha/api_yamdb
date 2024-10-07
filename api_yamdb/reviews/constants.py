@@ -24,7 +24,7 @@ USERNAME_REGEX = r'^[\w.@+-]+\Z'
 
 VALIDATE_YEAR_ERROR = (
     'Произведение не может быть создано'
-    'в {creation_year} году, это далекое будущее!'
+    'позднее {this_year} года.'
 )
 
 USER_REGISTER_NAME_ERROR = (
