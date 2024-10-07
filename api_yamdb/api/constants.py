@@ -12,3 +12,9 @@ USER_REGISTER_ERROR = (
 EMAIL_REGISTER_ERROR = (
     'Указанный email существует! Ты нас не обманешь, мошенник.'
 )
+HTTP_METHOD_NAMES = [
+    'get',
+    'post',
+    'delete',
+    'patch',
+]

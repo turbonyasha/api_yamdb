@@ -30,7 +30,7 @@ class AdminOnlyPermission(BasePermission):
         )
 
 
-class ReviewCommentSectionPermissions(BasePermission):
+class InteractionSectionPermissions(BasePermission):
     """
     GET - без токена,
     POST - аутентифицированному юзеру,
@@ -38,18 +38,24 @@ class ReviewCommentSectionPermissions(BasePermission):
     PUT - запрещен.
     """
     def has_permission(self, request, view):
-        if request.method == 'GET':
+        if request.method in SAFE_METHODS:
             return True
-        if request.method == 'POST':
-            return request.user.is_authenticated
-        if request.method in ['PATCH', 'DELETE']:
+        else:
             return (
-                request.user.is_authenticated and (
-                    request.user.is_admin
-                    or request.user.is_moderator
-                    or (hasattr(view, 'get_object')
-                        and view.get_object().author == request.user)
+                request.user.is_authenticated or (
+                    request.user.is_authenticated and (
+                        request.user.is_admin
+                        or request.user.is_moderator
+                    )
                 )
             )
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        return (
+            obj.author == request.user or (
+                request.user.is_admin
+                or request.user.is_moderator
+            )
+        )

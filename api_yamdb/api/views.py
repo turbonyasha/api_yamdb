@@ -31,7 +31,7 @@ import api.constants as const
 from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
-    ReviewCommentSectionPermissions,
+    InteractionSectionPermissions,
     AdminPermission
 )
 from .serializers import (
@@ -59,12 +59,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     permission_classes = (AdminOnlyPermission,)
-    http_method_names = [
-        'get',
-        'post',
-        'delete',
-        'patch',
-    ]
+    http_method_names = const.HTTP_METHOD_NAMES
 
     @action(
         methods=['GET', 'PATCH'],
@@ -213,7 +208,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     для модели отзывов на произведени.
     """
     serializer_class = ReviewSerializer
-    permission_classes = [ReviewCommentSectionPermissions]
+    permission_classes = [InteractionSectionPermissions]
+    http_method_names = const.HTTP_METHOD_NAMES
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -231,12 +227,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
             )
         serializer.save(author=self.request.user, title=self.get_title())
 
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
-
 
 class CommentViewSet(viewsets.ModelViewSet):
     """
@@ -244,7 +234,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     для модели комментариев к отзывам на произведения.
     """
     serializer_class = CommentSerializer
-    permission_classes = [ReviewCommentSectionPermissions]
+    permission_classes = [InteractionSectionPermissions]
+    http_method_names = const.HTTP_METHOD_NAMES
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -261,9 +252,3 @@ class CommentViewSet(viewsets.ModelViewSet):
             author=self.request.user,
             review=review,
             title=review.title)
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
