@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.core.validators import RegexValidator
 
 import reviews.constants as cs
+from api.constants import MAX_LENGTH_EMAIL
 from api.utilits import validate_username_chars
 from reviews.models import (
     Category, Comment, Genre, Review, Title, User
@@ -35,7 +36,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         required=True,
     )
     email = serializers.EmailField(
-        max_length=cs.MAX_LENGTH_EMAIL,
+        max_length=MAX_LENGTH_EMAIL,
         required=True,
     )
 

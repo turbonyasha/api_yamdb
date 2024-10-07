@@ -1,5 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
+from rest_framework.exceptions import ValidationError
 
 from api.utilits import send_confirmation_code
 
@@ -22,6 +23,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 import reviews.constants as cs
 from reviews.models import User, Category, Genre, Title, Review
+from .constants import USERNAME_ME, CONFIRMATION_CODE_ERROR
 from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
@@ -61,39 +63,23 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['GET', 'PATCH'],
-        url_path='me',
+        url_path=USERNAME_ME,
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
     def profile(self, request):
-        """Получение/обновление данных пользователя."""
+        """Получение или обновление данных пользователя."""
         if request.method == 'GET':
-            return self.get_user_data(request)
+            serializer = UserSerializer(request.user)
+        else:
+            serializer = UserSerializer(
+                request.user,
+                data=request.data,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(role=request.user.role)
 
-        if request.method == 'PATCH':
-            return self.update_user_data(request)
-
-    def get_user_data(self, request) -> Response:
-        """Получение данных текущего пользователя."""
-        serializer = UserSerializer(request.user)
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-    def update_user_data(self, request) -> Response:
-        """Обновление данных пользователя."""
-        serializer = UserSerializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(
-            raise_exception=True
-        )
-        serializer.save(
-            role=request.user.role
-        )
         return Response(
             serializer.data,
             status=status.HTTP_200_OK
@@ -112,17 +98,20 @@ def register_user(request):
             email=serializer.validated_data['email'],
             username=serializer.validated_data['username'],
         )
-    except IntegrityError:
-        return Response(
-            {'error': cs.USER_REGISTER_ERROR},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    if user.username == 'me':
-        return Response(
-            {'error': cs.USER_REGISTER_NAME_ERROR},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    except IntegrityError as e:
+        error_message = str(e).lower()
+        if 'email' in error_message:
+            raise ValidationError(
+                {'email': cs.EMAIL_REGISTER_ERROR}
+            )
+        elif 'username' in error_message:
+            raise ValidationError(
+                {'username': cs.USER_REGISTER_ERROR}
+            )
+        else:
+            raise ValidationError(
+                {'error': 'Неизвестная ошибка.'}
+            )
 
     send_confirmation_code(user)
     return Response(
@@ -148,19 +137,15 @@ def get_user_token(request):
     )
 
     if not default_token_generator.check_token(
-            user, serializer.validated_data['confirmation_code']
+            user,
+            serializer.validated_data['confirmation_code']
     ):
-        return Response(
-            {
-                'error': cs.CONFIRMATION_CODE_ERROR
-            },
-            status=status.HTTP_400_BAD_REQUEST
+        raise ValidationError(
+            {'confirmation_code': CONFIRMATION_CODE_ERROR}
         )
 
     return Response(
-        {
-            'token': str(AccessToken.for_user(user))
-        },
+        {'token': str(AccessToken.for_user(user))},
         status=status.HTTP_200_OK
     )
 
