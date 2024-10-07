@@ -26,7 +26,7 @@ from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
     ReviewCommentSectionPermissions,
-    AdminUserPermission
+    AdminPermission
 )
 from .serializers import (
     AdminSerializer,
@@ -171,7 +171,7 @@ def get_user_token(request):
 
 class CategoryGenreViewSet(viewsets.ModelViewSet):
     """Представление для работы с категориями и жанрами."""
-    permission_classes = (AdminUserPermission,)
+    permission_classes = (AdminPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -200,7 +200,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (AdminUserPermission,)
+    permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 

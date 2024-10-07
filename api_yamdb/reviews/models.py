@@ -139,6 +139,14 @@ class User(AbstractUser):
     def __str__(self):
         return f'{self.username} ({self.email})'
 
+    @property
+    def is_admin(self):
+        return self.is_superuser or self.role == cs.ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == cs.MODERATOR
+
 
 class Review(models.Model):
     """Модель отзыва для произведения."""
