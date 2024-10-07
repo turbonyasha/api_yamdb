@@ -26,7 +26,6 @@ from reviews.models import (
     Title,
     Review
 )
-from reviews.constants import ADMIN
 import api.constants as const
 from .filters import TitleFilter
 from .permissions import (
@@ -172,11 +171,9 @@ class CategoryGenreViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
+    http_method_names = ('get', 'post', 'delete')
 
     def retrieve(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
@@ -199,12 +196,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT' or not request.user.role == ADMIN:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
