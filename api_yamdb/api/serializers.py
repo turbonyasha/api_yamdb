@@ -11,16 +11,23 @@ from reviews.models import (
 )
 
 
-class AdminSerializer(serializers.ModelSerializer):
+class BasicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+        read_only_fields = ('role',)
+
+
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
             'username',
+            'email',
             'first_name',
             'last_name',
-            'email',
             'bio',
-            'role',
+            'role'
         )
 
 
@@ -43,13 +50,6 @@ class UserRegistrationSerializer(serializers.Serializer):
     def validate_username(self, value):
         validate_username_chars(value)
         return value
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
-        read_only_fields = ('role',)
 
 
 class GetTokenSerializer(serializers.Serializer):

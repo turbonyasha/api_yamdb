@@ -4,8 +4,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
 
-from api.utilits import send_confirmation_code
-
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
@@ -23,6 +21,7 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
+from api.utilits import send_confirmation_code
 import reviews.constants as cs
 from reviews.models import (
     User,
@@ -39,15 +38,15 @@ from .permissions import (
     AdminPermission
 )
 from .serializers import (
-    AdminSerializer,
-    UserRegistrationSerializer,
-    GetTokenSerializer,
-    UserSerializer,
-    GenreSerializer,
-    TitleSerializer,
+    BasicUserSerializer,
     CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    GetTokenSerializer,
     ReviewSerializer,
-    CommentSerializer
+    TitleSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
 )
 
 
@@ -57,7 +56,7 @@ class UserViewSet(viewsets.ModelViewSet):
     кастомной модели пользователя.
     """
     queryset = User.objects.all()
-    serializer_class = AdminSerializer
+    serializer_class = UserSerializer
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
@@ -77,21 +76,28 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def profile(self, request):
         """Получение или обновление данных пользователя."""
-        if request.method == 'GET':
-            serializer = UserSerializer(request.user)
-        else:
-            serializer = UserSerializer(
-                request.user,
-                data=request.data,
-                partial=True
-            )
+        if request.method == 'PATCH':
+            if request.user.is_admin:
+                serializer = UserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True)
+            else:
+                serializer = BasicUserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True)
+
             serializer.is_valid(raise_exception=True)
             serializer.save(role=request.user.role)
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -148,10 +154,9 @@ def get_user_token(request):
         username=serializer.validated_data['username']
     )
 
-    if not default_token_generator.check_token(
-            user,
-            serializer.validated_data['confirmation_code']
-    ):
+    if user.confirmation_code != serializer.validated_data[
+        'confirmation_code'
+    ]:
         raise ValidationError(
             {'confirmation_code': CONFIRMATION_CODE_ERROR}
         )
