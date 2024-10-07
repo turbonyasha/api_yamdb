@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 
 from api.constants import SEND_MAIL_MESSAGE
 from api_yamdb import settings
-import reviews.constants as cs
+import reviews.constants as const
 
 
 def send_confirmation_code(user, confirmation_code):
@@ -34,7 +34,7 @@ def validate_username_chars(username):
 
     invalid_chars = []
     for char in username:
-        if not re.match(cs.USERNAME_REGEX, char):
+        if not re.match(const.USERNAME_REGEX, char):
             invalid_chars.append(char)
 
     if invalid_chars:
