@@ -21,7 +21,7 @@ class NameSlugModel(models.Model):
     slug = models.SlugField(
         max_length=const.MAX_CONTENT_SLUG,
         unique=True,
-        verbose_name='Слаг'
+        verbose_name='Идентификатор'
     )
 
     class Meta:
@@ -150,24 +150,39 @@ class User(AbstractUser):
         return self.role == const.MODERATOR
 
 
-class Review(models.Model):
-    """Модель отзыва для произведения."""
-
+class InteractionsModel(models.Model):
+    """
+    Абстрактная модель для наследования
+    моделей взаимодействия пользователей с ресурсами.
+    Поля текста, автора, даты публикации,
+    умолчательная сортировка по дате публикации.
+    """
     text = models.TextField(
-        verbose_name='Текст отзыва'
+        verbose_name='Текст'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор отзыва'
-    )
-    score = models.PositiveIntegerField(
-        verbose_name='Оценка пользователя',
-        choices=[(i, str(i)) for i in range(1, 11)]
+        verbose_name='Автор'
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата создания'
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ('-pub_date',)
+
+
+class Review(InteractionsModel):
+    """Модель отзыва для произведения."""
+
+    score = models.PositiveIntegerField(
+        verbose_name='Оценка пользователя',
+        choices=[(i, str(i)) for i in range(
+            const.MIN_SCORE, const.MAX_SCORE + 1
+        )]
     )
     title = models.ForeignKey(
         Title,
@@ -178,10 +193,9 @@ class Review(models.Model):
     def __str__(self):
         return f'Отзыв на {self.title.name[:20]} от {self.author.username}'
 
-    class Meta:
+    class Meta(InteractionsModel.Meta):
         verbose_name = 'отзыв'
         verbose_name_plural = 'Отзывы'
-        ordering = ('-pub_date',)
         default_related_name = 'reviews'
         constraints = [
             models.UniqueConstraint(
@@ -191,17 +205,9 @@ class Review(models.Model):
         ]
 
 
-class Comment(models.Model):
+class Comment(InteractionsModel):
     """Модель комментария к отзыву."""
 
-    text = models.TextField(
-        verbose_name='Текст комментария'
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Автор комментария'
-    )
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
@@ -212,16 +218,11 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Произведение'
     )
-    pub_date = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Дата создания'
-    )
 
     def __str__(self):
         return f'Комментарий к отзыву {self.review.text[:20]}'
 
-    class Meta:
+    class Meta(InteractionsModel.Meta):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ('-pub_date',)
         default_related_name = 'comments'
