@@ -1,25 +1,11 @@
+import re
+
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db import IntegrityError
 
 from api_yamdb import settings
 import reviews.constants as cs
-from reviews.models import User
-
-
-def create_user(serializer):
-    """
-    Создает пользователя или возвращает None,
-    если данные не уникальны.
-    """
-    try:
-        user, created = User.objects.get_or_create(
-            email=serializer.validated_data['email'],
-            username=serializer.validated_data['username'],
-        )
-        return user
-    except IntegrityError:
-        return None
 
 
 def send_confirmation_code(user):
@@ -37,9 +23,36 @@ def send_confirmation_code(user):
     )
 
 
-def is_valid_confirmation_code(user, confirmation_code):
-    """Проверяет корректность кода подтверждения."""
-    return default_token_generator.check_token(
-        user,
-        confirmation_code
-    )
+# def is_valid_confirmation_code(user, confirmation_code):
+#     """Проверяет корректность кода подтверждения."""
+#     return default_token_generator.check_token(
+#         user,
+#         confirmation_code
+#     )
+
+
+def validate_username_chars(username):
+    """
+    Проверяет, есть ли в имени пользователя
+    недопустимые символы.
+    """
+
+    if username.lower() == 'me':
+        raise ValidationError(
+            f'Имя \'{username}\' недопустимо. '
+            f'Придумайте другое.'
+        )
+
+    invalid_chars = []
+    for char in username:
+        if not re.match(cs.USERNAME_REGEX, char):
+            invalid_chars.append(char)
+
+    if invalid_chars:
+        invalid_chars_list = ', '.join(
+            set(invalid_chars)
+        )
+        raise ValidationError(
+            f'Поле \'username\' содержит '
+            f'недопустимые символы: \'{invalid_chars_list}\'.'
+        )

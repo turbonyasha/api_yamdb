@@ -1,12 +1,10 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from reviews.constants import ADMIN, MODERATOR
-
 from rest_framework.response import Response
 from rest_framework import status
 
 
-class AdminUserPermission(BasePermission):
+class AdminPermission(BasePermission):
     """
     Разрешает доступ всем пользователям для безопасных методов запроса,
     в остальных случаях — только администраторам.
@@ -14,9 +12,9 @@ class AdminUserPermission(BasePermission):
 
     def has_permission(self, request, view):
         return (
-            request.method in SAFE_METHODS
-            or (request.user.is_authenticated
-                and request.user.role == ADMIN)
+                request.method in SAFE_METHODS
+                or (request.user.is_authenticated
+                    and request.user.is_admin)
         )
 
 
@@ -25,8 +23,8 @@ class AdminOnlyPermission(BasePermission):
 
     def has_permission(self, request, view):
         return (
-            request.user.is_authenticated
-            and (request.user.role == ADMIN or request.user.is_staff)
+                request.user.is_authenticated
+                and request.user.is_admin
         )
 
 
@@ -45,8 +43,8 @@ class ReviewCommentSectionPermissions(BasePermission):
         if request.method in ['PATCH', 'DELETE']:
             return (
                 request.user.is_authenticated and (
-                    request.user.role == ADMIN
-                    or request.user.role == MODERATOR
+                    request.user.is_admin
+                    or request.user.is_moderator
                     or (hasattr(view, 'get_object')
                         and view.get_object().author == request.user)
                 )

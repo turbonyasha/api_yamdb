@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.core.validators import RegexValidator
 
 import reviews.constants as cs
+from api.utilits import validate_username_chars
 from reviews.models import (
     Category, Comment, Genre, Review, Title, User
 )
@@ -22,7 +23,7 @@ class AdminSerializer(serializers.ModelSerializer):
         )
 
 
-class AuthSerializer(serializers.Serializer):
+class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=cs.MAX_LENGTH_USERNAME,
         validators=[
@@ -38,36 +39,35 @@ class AuthSerializer(serializers.Serializer):
         required=True,
     )
 
+    def validate_username(self, value):
+        validate_username_chars(value)
+        return value
 
-class UserSerializer(AdminSerializer):
-    role = serializers.StringRelatedField()
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+        read_only_fields = ('role',)
 
 
-class GetTokenSerializer(serializers.ModelSerializer):
+class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(
+        max_length=cs.MAX_LENGTH_USERNAME,
         required=True
     )
     confirmation_code = serializers.CharField(
         required=True
     )
 
-    class Meta:
-        model = User
-        fields = (
-            'username',
-            'confirmation_code',
-        )
-
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Category
         exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Genre
         exclude = ('id',)

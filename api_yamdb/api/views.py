@@ -1,8 +1,8 @@
-from api.utilits import (
-    create_user,
-    is_valid_confirmation_code,
-    send_confirmation_code
-)
+from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError
+
+from api.utilits import send_confirmation_code
+
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
@@ -26,11 +26,11 @@ from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
     ReviewCommentSectionPermissions,
-    AdminUserPermission
+    AdminPermission
 )
 from .serializers import (
     AdminSerializer,
-    AuthSerializer,
+    UserRegistrationSerializer,
     GetTokenSerializer,
     UserSerializer,
     GenreSerializer,
@@ -101,29 +101,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.AllowAny],)
+@permission_classes([permissions.AllowAny], )
 def register_user(request):
-    """Регистрации нового пользователя."""
-    serializer = AuthSerializer(
-        data=request.data
-    )
-    serializer.is_valid(
-        raise_exception=True
-    )
-    user = create_user(serializer)
-    if not user:
+    """Регистрация нового пользователя."""
+    serializer = UserRegistrationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        user, created = User.objects.get_or_create(
+            email=serializer.validated_data['email'],
+            username=serializer.validated_data['username'],
+        )
+    except IntegrityError:
         return Response(
-            {
-                'error': cs.USER_REGISTER_ERROR
-            },
+            {'error': cs.USER_REGISTER_ERROR},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     if user.username == 'me':
         return Response(
-            {
-                'error': cs.USER_REGISTER_NAME_ERROR
-            },
+            {'error': cs.USER_REGISTER_NAME_ERROR},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -150,9 +147,8 @@ def get_user_token(request):
         username=serializer.validated_data['username']
     )
 
-    if not is_valid_confirmation_code(
-            user,
-            serializer.validated_data['confirmation_code']
+    if not default_token_generator.check_token(
+            user, serializer.validated_data['confirmation_code']
     ):
         return Response(
             {
@@ -171,7 +167,7 @@ def get_user_token(request):
 
 class CategoryGenreViewSet(viewsets.ModelViewSet):
     """Представление для работы с категориями и жанрами."""
-    permission_classes = (AdminUserPermission,)
+    permission_classes = (AdminPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -200,7 +196,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (AdminUserPermission,)
+    permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -227,8 +223,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if Review.objects.filter(
-            title_id=self.kwargs.get('title_id'),
-            author=self.request.user
+                title_id=self.kwargs.get('title_id'),
+                author=self.request.user
         ).exists():
             raise exceptions.ValidationError(
                 "Вы уже оставили отзыв на это произведение."
