@@ -5,6 +5,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 import reviews.constants as cs
+from api.utilits import validate_username_chars
+from reviews.utilits import calculate_max_length
 
 
 class NameSlugModel(models.Model):
@@ -111,14 +113,14 @@ class User(AbstractUser):
         unique=True,
     )
     bio = models.CharField(
-        verbose_name='Био',
+        verbose_name='Биография',
         max_length=cs.MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
         verbose_name='Роль',
-        max_length=cs.MAX_LENGTH_ROLE,
+        max_length=calculate_max_length(cs.ROLE_CHOICES),
         choices=cs.ROLE_CHOICES,
         default=cs.USER,
     )
@@ -130,6 +132,10 @@ class User(AbstractUser):
         unique=True,
         auto_created=True
     )
+
+    def clean(self):
+        super().clean()
+        validate_username_chars(self.username)
 
     class Meta:
         ordering = ('username',)
