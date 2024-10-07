@@ -1,10 +1,8 @@
-import uuid
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
-import reviews.constants as cs
+import reviews.constants as const
 from api.utilits import validate_username_chars
 from reviews.utilits import calculate_max_length
 
@@ -17,11 +15,11 @@ class NameSlugModel(models.Model):
     """
 
     name = models.CharField(
-        max_length=cs.MAX_CONTENT_NAME,
+        max_length=const.MAX_CONTENT_NAME,
         verbose_name='Название'
     )
     slug = models.SlugField(
-        max_length=cs.MAX_CONTENT_SLUG,
+        max_length=const.MAX_CONTENT_SLUG,
         unique=True,
         verbose_name='Слаг'
     )
@@ -55,7 +53,7 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории."""
 
     name = models.CharField(
-        max_length=cs.MAX_CONTENT_NAME, verbose_name='Название произведения'
+        max_length=const.MAX_CONTENT_NAME, verbose_name='Название произведения'
     )
     year = models.IntegerField(verbose_name='Год создания')
     category = models.ForeignKey(
@@ -99,38 +97,36 @@ class User(AbstractUser):
     username = models.CharField(
         verbose_name='Пользователь',
         unique=True,
-        max_length=cs.MAX_LENGTH_USERNAME,
+        max_length=const.MAX_LENGTH_USERNAME,
         validators=[
             RegexValidator(
-                regex=cs.USERNAME_REGEX,
-                message=cs.USER_NAME_INVALID_MSG,
+                regex=const.USERNAME_REGEX,
+                message=const.USER_NAME_INVALID_MSG,
             ),
         ],
     )
     email = models.EmailField(
         verbose_name='Почта',
-        max_length=cs.MAX_LENGTH_EMAIL,
+        max_length=const.MAX_LENGTH_EMAIL,
         unique=True,
     )
     bio = models.CharField(
         verbose_name='Биография',
-        max_length=cs.MAX_LENGTH_BIO,
+        max_length=const.MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
         verbose_name='Роль',
-        max_length=calculate_max_length(cs.ROLE_CHOICES),
-        choices=cs.ROLE_CHOICES,
-        default=cs.USER,
+        max_length=calculate_max_length(const.ROLE_CHOICES),
+        choices=const.ROLE_CHOICES,
+        default=const.USER,
     )
     confirmation_code = models.CharField(
-        verbose_name='Самый секретный код',
-        default=uuid.uuid4,
-        max_length=cs.MAX_LENGTH_UUID,
-        editable=False,
-        unique=True,
-        auto_created=True
+        verbose_name='Код подтверждения',
+        max_length=6,
+        null=True,
+        blank=True,
     )
 
     def clean(self):
@@ -147,11 +143,11 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.is_superuser or self.role == cs.ADMIN
+        return self.is_superuser or self.role == const.ADMIN
 
     @property
     def is_moderator(self):
-        return self.role == cs.MODERATOR
+        return self.role == const.MODERATOR
 
 
 class Review(models.Model):

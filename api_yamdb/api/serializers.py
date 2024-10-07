@@ -4,22 +4,30 @@ from rest_framework import serializers
 from django.core.validators import RegexValidator
 
 import reviews.constants as cs
+from api.constants import MAX_LENGTH_EMAIL
 from api.utilits import validate_username_chars
 from reviews.models import (
     Category, Comment, Genre, Review, Title, User
 )
 
 
-class AdminSerializer(serializers.ModelSerializer):
+class BasicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+        read_only_fields = ('role',)
+
+
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
             'username',
+            'email',
             'first_name',
             'last_name',
-            'email',
             'bio',
-            'role',
+            'role'
         )
 
 
@@ -35,20 +43,13 @@ class UserRegistrationSerializer(serializers.Serializer):
         required=True,
     )
     email = serializers.EmailField(
-        max_length=cs.MAX_LENGTH_EMAIL,
+        max_length=MAX_LENGTH_EMAIL,
         required=True,
     )
 
     def validate_username(self, value):
         validate_username_chars(value)
         return value
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
-        read_only_fields = ('role',)
 
 
 class GetTokenSerializer(serializers.Serializer):
