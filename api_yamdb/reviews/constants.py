@@ -22,21 +22,11 @@ USER_NAME_INVALID_MSG = (
 )
 USERNAME_REGEX = r'^[\w.@+-]+\Z'
 
-SLUG_REGEX = r'^[-a-zA-Z0-9_]+$'
-SLUG_INVALID_MSG = (
-    'Поле \'slug\' может содержать только буквы, цифры, дефис '
-    'и подчеркивание.'
+VALIDATE_YEAR_ERROR = (
+    'Произведение не может быть создано'
+    'в {creation_year} году, это далекое будущее!'
 )
 
-VALIDATE_YEAR_ERROR = 'Произведение не может быть создано в будущем!'
-
-USER_REGISTER_ERROR = (
-    'Указанный username существует! Ты нас не обманешь, мошенник.'
-)
-EMAIL_REGISTER_ERROR = (
-    'Указанный email существует! Ты нас не обманешь, мошенник.'
-)
 USER_REGISTER_NAME_ERROR = (
     'Недопустимое имя пользователя, придумай что-нибудь еще.'
 )
-

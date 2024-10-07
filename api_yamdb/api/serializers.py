@@ -3,7 +3,7 @@ from datetime import datetime as dt
 from rest_framework import serializers
 from django.core.validators import RegexValidator
 
-import reviews.constants as cs
+import reviews.constants as const
 from api.constants import MAX_LENGTH_EMAIL
 from api.utilits import validate_username_chars
 from reviews.models import (
@@ -33,11 +33,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
-        max_length=cs.MAX_LENGTH_USERNAME,
+        max_length=const.MAX_LENGTH_USERNAME,
         validators=[
             RegexValidator(
-                regex=cs.USERNAME_REGEX,
-                message=cs.USER_NAME_INVALID_MSG,
+                regex=const.USERNAME_REGEX,
+                message=const.USER_NAME_INVALID_MSG,
             ),
         ],
         required=True,
@@ -54,7 +54,7 @@ class UserRegistrationSerializer(serializers.Serializer):
 
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(
-        max_length=cs.MAX_LENGTH_USERNAME,
+        max_length=const.MAX_LENGTH_USERNAME,
         required=True
     )
     confirmation_code = serializers.CharField(
@@ -126,7 +126,7 @@ class TitleSerializer(serializers.ModelSerializer):
     def validate_year(self, creation_year):
         if creation_year > dt.today().year:
             raise serializers.ValidationError(
-                cs.VALIDATE_YEAR_ERROR
+                const.VALIDATE_YEAR_ERROR.format(creation_year=creation_year)
             )
         return creation_year
 
