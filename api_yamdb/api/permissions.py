@@ -1,12 +1,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from reviews.constants import ADMIN, MODERATOR
 
-from rest_framework.response import Response
-from rest_framework import status
-
-
-class AdminUserPermission(BasePermission):
+class AdminPermission(BasePermission):
     """
     Разрешает доступ всем пользователям для безопасных методов запроса,
     в остальных случаях — только администраторам.
@@ -15,8 +10,10 @@ class AdminUserPermission(BasePermission):
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
-            or (request.user.is_authenticated
-                and request.user.role == ADMIN)
+            or (
+                request.user.is_authenticated
+                and request.user.is_admin
+            )
         )
 
 
@@ -26,11 +23,11 @@ class AdminOnlyPermission(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
-            and (request.user.role == ADMIN or request.user.is_staff)
+            and request.user.is_admin
         )
 
 
-class ReviewCommentSectionPermissions(BasePermission):
+class InteractionSectionPermissions(BasePermission):
     """
     GET - без токена,
     POST - аутентифицированному юзеру,
@@ -38,18 +35,24 @@ class ReviewCommentSectionPermissions(BasePermission):
     PUT - запрещен.
     """
     def has_permission(self, request, view):
-        if request.method == 'GET':
+        if request.method in SAFE_METHODS:
             return True
-        if request.method == 'POST':
-            return request.user.is_authenticated
-        if request.method in ['PATCH', 'DELETE']:
+        else:
             return (
-                request.user.is_authenticated and (
-                    request.user.role == ADMIN
-                    or request.user.role == MODERATOR
-                    or (hasattr(view, 'get_object')
-                        and view.get_object().author == request.user)
+                request.user.is_authenticated or (
+                    request.user.is_authenticated and (
+                        request.user.is_admin
+                        or request.user.is_moderator
+                    )
                 )
             )
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        return (
+            obj.author == request.user or (
+                request.user.is_admin
+                or request.user.is_moderator
+            )
+        )

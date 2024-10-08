@@ -1,44 +1,34 @@
-from api.utilits import (
-    create_user,
-    is_valid_confirmation_code,
-    send_confirmation_code
-)
+import random
+
+from django.db import IntegrityError
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import (
-    exceptions,
-    filters,
-    permissions,
-    status,
-    viewsets
-)
-from rest_framework.decorators import (
-    action,
-    api_view,
-    permission_classes
-)
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-import reviews.constants as cs
+import api.constants as const
 from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (
-    AdminOnlyPermission,
-    ReviewCommentSectionPermissions,
-    AdminUserPermission
+    AdminOnlyPermission, InteractionSectionPermissions, AdminPermission
 )
 from .serializers import (
-    AdminSerializer,
-    AuthSerializer,
-    GetTokenSerializer,
-    UserSerializer,
-    GenreSerializer,
-    TitleSerializer,
+    BasicUserSerializer,
     CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    GetTokenSerializer,
     ReviewSerializer,
-    CommentSerializer
+    TitleReadSerializer,
+    TitleUpdateSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
 )
+from .utilits import send_confirmation_code
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -47,87 +37,77 @@ class UserViewSet(viewsets.ModelViewSet):
     кастомной модели пользователя.
     """
     queryset = User.objects.all()
-    serializer_class = AdminSerializer
+    serializer_class = UserSerializer
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     permission_classes = (AdminOnlyPermission,)
-    http_method_names = [
-        'get',
-        'post',
-        'delete',
-        'patch',
-    ]
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
     @action(
         methods=['GET', 'PATCH'],
-        url_path='me',
+        url_path=const.USERNAME_ME,
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
     def profile(self, request):
-        """Получение/обновление данных пользователя."""
-        if request.method == 'GET':
-            return self.get_user_data(request)
-
+        """Получение или обновление данных пользователя."""
         if request.method == 'PATCH':
-            return self.update_user_data(request)
+            if request.user.is_admin:
+                serializer = UserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True)
+            else:
+                serializer = BasicUserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True)
 
-    def get_user_data(self, request) -> Response:
-        """Получение данных текущего пользователя."""
+            serializer.is_valid(raise_exception=True)
+            serializer.save(role=request.user.role)
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
         serializer = UserSerializer(request.user)
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-    def update_user_data(self, request) -> Response:
-        """Обновление данных пользователя."""
-        serializer = UserSerializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(
-            raise_exception=True
-        )
-        serializer.save(
-            role=request.user.role
-        )
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+        return Response(serializer.data)
 
 
 @api_view(['POST'])
-@permission_classes([permissions.AllowAny],)
+@permission_classes([permissions.AllowAny], )
 def register_user(request):
-    """Регистрации нового пользователя."""
-    serializer = AuthSerializer(
-        data=request.data
-    )
-    serializer.is_valid(
-        raise_exception=True
-    )
-    user = create_user(serializer)
-    if not user:
-        return Response(
-            {
-                'error': cs.USER_REGISTER_ERROR
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    """Регистрация нового пользователя."""
+    serializer = UserRegistrationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
-    if user.username == 'me':
-        return Response(
-            {
-                'error': cs.USER_REGISTER_NAME_ERROR
-            },
-            status=status.HTTP_400_BAD_REQUEST
+    try:
+        user, created = User.objects.get_or_create(
+            email=serializer.validated_data['email'],
+            username=serializer.validated_data['username'],
         )
+    except IntegrityError as e:
+        error_message = str(e).lower()
+        if 'email' in error_message:
+            raise ValidationError(
+                {'email': const.EMAIL_REGISTER_ERROR}
+            )
+        elif 'username' in error_message:
+            raise ValidationError(
+                {'username': const.USER_REGISTER_ERROR}
+            )
+        else:
+            raise ValidationError(
+                {'error': 'Неизвестная ошибка.'}
+            )
 
-    send_confirmation_code(user)
+    confirmation_code = str(random.randint(0, 999_999))
+    user.confirmation_code = confirmation_code
+    user.save()
+
+    send_confirmation_code(user, confirmation_code)
     return Response(
         serializer.data,
         status=status.HTTP_200_OK
@@ -150,38 +130,31 @@ def get_user_token(request):
         username=serializer.validated_data['username']
     )
 
-    if not is_valid_confirmation_code(
-            user,
-            serializer.validated_data['confirmation_code']
-    ):
-        return Response(
-            {
-                'error': cs.CONFIRMATION_CODE_ERROR
-            },
-            status=status.HTTP_400_BAD_REQUEST
+    if user.confirmation_code != serializer.validated_data[
+        'confirmation_code'
+    ]:
+        raise ValidationError(
+            {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
 
     return Response(
-        {
-            'token': str(AccessToken.for_user(user))
-        },
+        {'token': str(AccessToken.for_user(user))},
         status=status.HTTP_200_OK
     )
 
 
-class CategoryGenreViewSet(viewsets.ModelViewSet):
+class CategoryGenreViewSet(mixins.ListModelMixin,
+                           mixins.CreateModelMixin,
+                           mixins.UpdateModelMixin,
+                           mixins.DestroyModelMixin,
+                           viewsets.GenericViewSet):
     """Представление для работы с категориями и жанрами."""
-    permission_classes = (AdminUserPermission,)
+    permission_classes = (AdminPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
-
-    def retrieve(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def update(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    http_method_names = const.ALLOWED_HTTP_METHODS_CATEGORY_GENRE
 
 
 class GenreViewSet(CategoryGenreViewSet):
@@ -198,17 +171,18 @@ class CategoryViewSet(CategoryGenreViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
-    permission_classes = (AdminUserPermission,)
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).order_by('name')
+    permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT' or not request.user.role == cs.ADMIN:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
+    def get_serializer_class(self):
+        if self.action == 'get':
+            return TitleReadSerializer
+        return TitleUpdateSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -217,7 +191,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     для модели отзывов на произведени.
     """
     serializer_class = ReviewSerializer
-    permission_classes = [ReviewCommentSectionPermissions]
+    permission_classes = [InteractionSectionPermissions]
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -226,20 +201,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
-        if Review.objects.filter(
-            title_id=self.kwargs.get('title_id'),
-            author=self.request.user
-        ).exists():
-            raise exceptions.ValidationError(
-                "Вы уже оставили отзыв на это произведение."
-            )
         serializer.save(author=self.request.user, title=self.get_title())
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -248,10 +210,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     для модели комментариев к отзывам на произведения.
     """
     serializer_class = CommentSerializer
-    permission_classes = [ReviewCommentSectionPermissions]
-
-    def get_title(self):
-        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+    permission_classes = [InteractionSectionPermissions]
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_review(self):
         return get_object_or_404(Review, pk=self.kwargs['review_id'])
@@ -265,9 +225,3 @@ class CommentViewSet(viewsets.ModelViewSet):
             author=self.request.user,
             review=review,
             title=review.title)
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return super().update(request, *args, **kwargs)
