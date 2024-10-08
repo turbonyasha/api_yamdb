@@ -89,7 +89,7 @@ class Title(models.Model):
         ordering = ('category', 'name')
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'category'],
+                fields=('name', 'category'),
                 name='unique_name_category'
             )
         ]

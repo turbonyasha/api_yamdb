@@ -2,38 +2,19 @@ import random
 
 from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import (
-    exceptions,
-    filters,
-    pagination,
-    permissions,
-    status,
-    viewsets
-)
-from rest_framework.decorators import (
-    action,
-    api_view,
-    permission_classes
-)
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import (
-    User,
-    Category,
-    Genre,
-    Title,
-    Review
-)
 import api.constants as const
+from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (
-    AdminOnlyPermission,
-    InteractionSectionPermissions,
-    AdminPermission
+    AdminOnlyPermission, InteractionSectionPermissions, AdminPermission
 )
 from .serializers import (
     BasicUserSerializer,
@@ -42,7 +23,8 @@ from .serializers import (
     GenreSerializer,
     GetTokenSerializer,
     ReviewSerializer,
-    TitleSerializer,
+    TitleReadSerializer,
+    TitleUpdateSerializer,
     UserRegistrationSerializer,
     UserSerializer,
 )
@@ -60,7 +42,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     permission_classes = (AdminOnlyPermission,)
-    http_method_names = const.HTTP_METHOD_NAMES
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
     @action(
         methods=['GET', 'PATCH'],
@@ -161,17 +143,18 @@ def get_user_token(request):
     )
 
 
-class CategoryGenreViewSet(viewsets.ModelViewSet):
+class CategoryGenreViewSet(mixins.ListModelMixin,
+                           mixins.CreateModelMixin,
+                           mixins.UpdateModelMixin,
+                           mixins.DestroyModelMixin,
+                           viewsets.GenericViewSet):
     """Представление для работы с категориями и жанрами."""
     permission_classes = (AdminPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
-    http_method_names = ('get', 'post', 'delete')
-
-    def retrieve(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    http_method_names = const.ALLOWED_HTTP_METHODS_CATEGORY_GENRE
 
 
 class GenreViewSet(CategoryGenreViewSet):
@@ -191,11 +174,15 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
-    serializer_class = TitleSerializer
     permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    http_method_names = ('get', 'post', 'patch', 'delete')
+    http_method_names = const.ALLOWED_HTTP_METHODS
+
+    def get_serializer_class(self):
+        if self.action == 'get':
+            return TitleReadSerializer
+        return TitleUpdateSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -205,7 +192,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ReviewSerializer
     permission_classes = [InteractionSectionPermissions]
-    http_method_names = const.HTTP_METHOD_NAMES
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -224,10 +211,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
     serializer_class = CommentSerializer
     permission_classes = [InteractionSectionPermissions]
-    http_method_names = const.HTTP_METHOD_NAMES
-
-    def get_title(self):
-        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+    http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_review(self):
         return get_object_or_404(Review, pk=self.kwargs['review_id'])
