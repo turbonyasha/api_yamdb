@@ -9,13 +9,6 @@ from reviews.validators import (
 )
 
 
-class BasicUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
-        read_only_fields = ('role',)
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -28,6 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         )
 
+    read_only_fields = ('role',)
+
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
@@ -37,6 +32,7 @@ class UserRegistrationSerializer(serializers.Serializer):
                 regex=const.USERNAME_REGEX,
                 message=const.USER_NAME_INVALID_MSG,
             ),
+            validate_username_chars
         ],
         required=True,
     )
@@ -44,9 +40,6 @@ class UserRegistrationSerializer(serializers.Serializer):
         max_length=const.MAX_LENGTH_EMAIL,
         required=True,
     )
-
-    def validate_username(self, username):
-        return validate_username_chars(username)
 
 
 class GetTokenSerializer(serializers.Serializer):
@@ -88,15 +81,15 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if Review.objects.filter(
-            title_id=self.context['view'].kwargs['title_id'],
-            author=self.context['request'].user
+                title_id=self.context['view'].kwargs['title_id'],
+                author=self.context['request'].user
         ).exists() and self.context['request'].method == 'POST':
             raise exceptions.ValidationError(REVIEW_VALIDATE_ERROR)
         return data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True,)
+    genre = GenreSerializer(many=True, )
     category = CategorySerializer()
     rating = serializers.IntegerField(read_only=True)
 

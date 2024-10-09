@@ -14,23 +14,12 @@ def validate_username_chars(username):
     недопустимые символы.
     """
 
-    if username.lower() == apiconst.USERNAME_ME:
+    if username == apiconst.USERNAME_ME:
         raise ValidationError(reviewconst.VALIDATE_ERROR_USERNAME_ME)
 
-    invalid_chars = []
-    for char in username:
-        if not re.match(reviewconst.USERNAME_REGEX, char):
-            invalid_chars.append(char)
+    if not re.fullmatch(reviewconst.USERNAME_REGEX, username):
+        raise ValidationError('Поле username содержит недопустимые символы.')
 
-    if invalid_chars:
-        invalid_chars_list = ', '.join(
-            set(invalid_chars)
-        )
-        raise ValidationError(
-            reviewconst.VALIDATE_ERROR_INVALID_CHAR.format(
-                invalid_chars_list=invalid_chars_list
-            )
-        )
     return username
 
 
