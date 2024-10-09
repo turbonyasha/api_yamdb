@@ -1,17 +1,16 @@
-USERNAME_ME = 'me'
-MAX_LENGTH_EMAIL = 254
-
 SEND_MAIL_MESSAGE = (
-    'Не говори никому этот код для входа: {confirmation_code}, молю...'
+    'Код подтверждения: {confirmation_code}'
 )
-CONFIRMATION_CODE_ERROR = 'Неверный код подтверждения, товарищ.'
+CONFIRMATION_CODE_ERROR = 'Неверный код подтверждения.'
 
 USER_REGISTER_ERROR = (
-    'Указанный username существует! Ты нас не обманешь, мошенник.'
+    'Этот username уже существует.'
 )
 EMAIL_REGISTER_ERROR = (
-    'Указанный email существует! Ты нас не обманешь, мошенник.'
+    'Этот email уже существует.'
 )
 
 ALLOWED_HTTP_METHODS = ('get', 'post', 'delete', 'patch')
 ALLOWED_HTTP_METHODS_CATEGORY_GENRE = ('get', 'post', 'delete')
+
+REVIEW_SCORE_ERROR = 'Оценка может быть только от 1 до 10.'
