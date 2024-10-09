@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 
-from .constants import SEND_MAIL_MESSAGE, USERNAME_ME
+from .constants import SEND_MAIL_MESSAGE
 from api_yamdb import settings
 
 

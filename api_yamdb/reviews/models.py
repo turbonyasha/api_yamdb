@@ -54,10 +54,12 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории и имени."""
 
     name = models.CharField(
-        max_length=const.MAX_CONTENT_NAME, verbose_name='Название'
+        max_length=const.MAX_CONTENT_NAME,
+        verbose_name='Название'
     )
     year = models.IntegerField(
-        verbose_name='Год создания', validators=(validate_creation_year,)
+        verbose_name='Год создания',
+        validators=(validate_creation_year,)
     )
     category = models.ForeignKey(
         Category,

@@ -144,11 +144,13 @@ def get_user_token(request):
     )
 
 
-class ContentGenericViewSet(mixins.ListModelMixin,
-                            mixins.CreateModelMixin,
-                            mixins.UpdateModelMixin,
-                            mixins.DestroyModelMixin,
-                            viewsets.GenericViewSet):
+class ContentGenericViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
     """Представление для работы с категориями и жанрами."""
     permission_classes = (AdminPermission,)
     filter_backends = (filters.SearchFilter,)
