@@ -149,7 +149,7 @@ class User(AbstractUser):
         return self.role == const.MODERATOR
 
 
-class InteractionsModel(models.Model):
+class TextAuthorPubdateModel(models.Model):
     """
     Абстрактная модель для наследования
     моделей взаимодействия пользователей с ресурсами.
@@ -162,7 +162,8 @@ class InteractionsModel(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name='%(class)s'
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -174,28 +175,28 @@ class InteractionsModel(models.Model):
         ordering = ('-pub_date',)
 
 
-class Review(InteractionsModel):
+class Review(TextAuthorPubdateModel):
     """Модель отзыва для произведения."""
 
     score = models.PositiveIntegerField(
         verbose_name='Оценка пользователя',
         choices=[(i, str(i)) for i in range(
             const.MIN_SCORE, const.MAX_SCORE + 1
-        )]
+        )],
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
+        related_name='%(class)s',
         verbose_name='Произведение'
     )
 
     def __str__(self):
         return f'Отзыв на {self.title.name[:20]} от {self.author.username}'
 
-    class Meta(InteractionsModel.Meta):
+    class Meta(TextAuthorPubdateModel.Meta):
         verbose_name = 'отзыв'
         verbose_name_plural = 'Отзывы'
-        default_related_name = 'reviews'
         constraints = [
             models.UniqueConstraint(
                 fields=['author', 'title'],
@@ -204,24 +205,25 @@ class Review(InteractionsModel):
         ]
 
 
-class Comment(InteractionsModel):
+class Comment(TextAuthorPubdateModel):
     """Модель комментария к отзыву."""
 
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        verbose_name='Отзыв'
+        verbose_name='Отзыв',
+        related_name='%(class)s',
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
+        related_name='%(class)s',
         verbose_name='Произведение'
     )
 
     def __str__(self):
-        return f'Комментарий к отзыву {self.review.text[:20]}'
+        return f'Комментарий {self.text[:20]} к отзыву {self.review.text[:20]}'
 
-    class Meta(InteractionsModel.Meta):
+    class Meta(TextAuthorPubdateModel.Meta):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        default_related_name = 'comments'
