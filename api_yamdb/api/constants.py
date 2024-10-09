@@ -14,3 +14,5 @@ ALLOWED_HTTP_METHODS = ('get', 'post', 'delete', 'patch')
 ALLOWED_HTTP_METHODS_CATEGORY_GENRE = ('get', 'post', 'delete')
 
 REVIEW_SCORE_ERROR = 'Оценка может быть только от 1 до 10.'
+
+USERNAME_ME = 'me'

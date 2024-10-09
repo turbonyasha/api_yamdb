@@ -11,7 +11,6 @@ MAX_SCORE = 10
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
-USERNAME_ME = 'me'
 ROLE_CHOICES = [
     (USER, 'Пользователь'),
     (ADMIN, 'Администратор'),
@@ -19,7 +18,7 @@ ROLE_CHOICES = [
 ]
 
 USER_NAME_INVALID_MSG = (
-    'Поле \'username\' может содержать только буквы, цифры '
+    'Поле username может содержать только буквы, цифры '
     'и символы @, ., +, -, _'
 )
 USERNAME_REGEX = r'^[\w.@+-]+\Z'
@@ -30,5 +29,5 @@ VALIDATE_YEAR_ERROR = (
 )
 
 USER_REGISTER_NAME_ERROR = (
-    'Недопустимое имя пользователя, придумай что-нибудь еще.'
+    'Недопустимое имя пользователя.'
 )

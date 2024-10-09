@@ -82,11 +82,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
 
-    # def validate_score(self, score):
-    #     return validate_score_1_to_10(score)
+    def validate_score(self, score):
+        return validate_score_1_to_10(score)
 
     def validate(self, data):
-        validate_score_1_to_10(data['score'])
         if Review.objects.filter(
             title_id=self.context['view'].kwargs['title_id'],
             author=self.context['request'].user
@@ -95,22 +94,6 @@ class ReviewSerializer(serializers.ModelSerializer):
                 'Вы уже оставили отзыв на это произведение.'
             )
         return data
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
-    title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
-    )
-    review = serializers.SlugRelatedField(
-        read_only=True, slug_field='text'
-    )
-
-    class Meta:
-        model = Comment
-        fields = '__all__'
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
@@ -142,3 +125,15 @@ class TitleCRUDSerializer(TitleReadSerializer):
 
     def validate_year(self, creation_year):
         return validate_creation_year(creation_year)
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+    title = TitleReadSerializer(read_only=True)
+    review = ReviewSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
