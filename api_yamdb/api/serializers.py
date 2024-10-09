@@ -1,6 +1,7 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers, exceptions
 
+from .constants import REVIEW_VALIDATE_ERROR
 import reviews.constants as const
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from reviews.validators import (
@@ -90,9 +91,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             title_id=self.context['view'].kwargs['title_id'],
             author=self.context['request'].user
         ).exists() and self.context['request'].method == 'POST':
-            raise exceptions.ValidationError(
-                'Вы уже оставили отзыв на это произведение.'
-            )
+            raise exceptions.ValidationError(REVIEW_VALIDATE_ERROR)
         return data
 
 
