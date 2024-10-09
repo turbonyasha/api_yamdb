@@ -4,7 +4,9 @@ from rest_framework import serializers
 
 import reviews.constants as const
 from api.utilits import validate_username_chars
+import reviews.constants as const
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from reviews.validators import validate_creation_year
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -113,6 +115,19 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True,)
+    category = CategorySerializer()
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
+        read_only_fields = fields
+
+
+class TitleCRUDSerializer(TitleReadSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -123,20 +138,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
         slug_field='slug'
     )
 
-    class Meta:
-        model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
+    class Meta(TitleReadSerializer.Meta):
+        read_only_fields = ()
 
-
-class TitleUpdateSerializer(TitleReadSerializer):
-    rating = serializers.FloatField(read_only=True)
-
-    def to_representation(self, title):
-        representation = super().to_representation(title)
-        representation['category'] = CategorySerializer(title.category).data
-        representation['genre'] = GenreSerializer(
-            title.genre.all(), many=True
-        ).data
-        return representation
+    def validate_year(self, creation_year):
+        return validate_creation_year(creation_year)

@@ -1,13 +1,13 @@
 from datetime import datetime as dt
 
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator
 from django.core.validators import RegexValidator
 from django.db import models
 
 import reviews.constants as const
 from api.utilits import validate_username_chars
-from reviews.utilits import calculate_max_length
+from .utilits import calculate_max_length
+from .validators import validate_creation_year
 
 
 class NameSlugModel(models.Model):
@@ -52,21 +52,13 @@ class Genre(NameSlugModel):
 
 
 class Title(models.Model):
-    """Модель произведений. Умолчательная сортировка по категории."""
+    """Модель произведений. Умолчательная сортировка по категории и имени."""
 
     name = models.CharField(
         max_length=const.MAX_CONTENT_NAME, verbose_name='Название'
     )
     year = models.IntegerField(
-        verbose_name='Год создания',
-        validators=(
-            MaxValueValidator(
-                dt.today().year,
-                message=const.VALIDATE_YEAR_ERROR.format(
-                    this_year=dt.today().year
-                )
-            ),
-        )
+        verbose_name='Год создания', validators=(validate_creation_year,)
     )
     category = models.ForeignKey(
         Category,
@@ -79,9 +71,6 @@ class Title(models.Model):
     )
     description = models.TextField(verbose_name='Описание', null=True)
 
-    def __str__(self):
-        return self.name[:20]
-
     class Meta:
         default_related_name = 'titles'
         verbose_name = 'произведение'
@@ -93,6 +82,12 @@ class Title(models.Model):
                 name='unique_name_category'
             )
         ]
+
+    def __str__(self):
+        return self.name[:20]
+
+    def get_current_year(self):
+        return dt.today().year
 
 
 class User(AbstractUser):

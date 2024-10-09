@@ -25,7 +25,7 @@ from .serializers import (
     GetTokenSerializer,
     ReviewSerializer,
     TitleReadSerializer,
-    TitleUpdateSerializer,
+    TitleCRUDSerializer,
     UserRegistrationSerializer,
     UserSerializer,
 )
@@ -144,11 +144,11 @@ def get_user_token(request):
     )
 
 
-class CategoryGenreViewSet(mixins.ListModelMixin,
-                           mixins.CreateModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.DestroyModelMixin,
-                           viewsets.GenericViewSet):
+class ContentGenericViewSet(mixins.ListModelMixin,
+                            mixins.CreateModelMixin,
+                            mixins.UpdateModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.GenericViewSet):
     """Представление для работы с категориями и жанрами."""
     permission_classes = (AdminPermission,)
     filter_backends = (filters.SearchFilter,)
@@ -158,13 +158,13 @@ class CategoryGenreViewSet(mixins.ListModelMixin,
     http_method_names = const.ALLOWED_HTTP_METHODS_CATEGORY_GENRE
 
 
-class GenreViewSet(CategoryGenreViewSet):
+class GenreViewSet(ContentGenericViewSet):
     """Представление для работы только с жанрами."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
-class CategoryViewSet(CategoryGenreViewSet):
+class CategoryViewSet(ContentGenericViewSet):
     """Представление для работы только с категориями."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -174,16 +174,16 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
-    ).order_by('name')
+    ).order_by(*Title._meta.ordering)
     permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_serializer_class(self):
-        if self.action == 'get':
+        if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
-        return TitleUpdateSerializer
+        return TitleCRUDSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
