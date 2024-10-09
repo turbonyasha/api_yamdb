@@ -113,4 +113,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'email.email.ru'
 EMAIL_HOST_USER = 'email@email.com'
 EMAIL_HOST_PASSWORD = 'email_password'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+CONFIRMATION_CODE_LENGTH = 6
+CONFIRMATION_CODE_CHARACTERS = '0123456789'

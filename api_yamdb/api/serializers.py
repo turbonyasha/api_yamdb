@@ -1,19 +1,12 @@
-from rest_framework import serializers
-from django.db import IntegrityError
 from django.core.validators import RegexValidator
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
+from .constants import REVIEW_VALIDATE_ERROR
 import reviews.constants as const
-from api.constants import MAX_LENGTH_EMAIL
-from api.utilits import validate_username_chars
 from reviews.models import Category, Comment, Genre, Review, Title, User
-
-
-class BasicUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
-        read_only_fields = ('role',)
+from reviews.validators import (
+    validate_creation_year, validate_username_chars, validate_score_1_to_10
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,6 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         )
 
+    read_only_fields = ('role',)
+
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
@@ -37,17 +32,14 @@ class UserRegistrationSerializer(serializers.Serializer):
                 regex=const.USERNAME_REGEX,
                 message=const.USER_NAME_INVALID_MSG,
             ),
+            validate_username_chars
         ],
         required=True,
     )
     email = serializers.EmailField(
-        max_length=MAX_LENGTH_EMAIL,
+        max_length=const.MAX_LENGTH_EMAIL,
         required=True,
     )
-
-    def validate_username(self, value):
-        validate_username_chars(value)
-        return value
 
 
 class GetTokenSerializer(serializers.Serializer):
@@ -84,32 +76,38 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
 
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except IntegrityError:
-            raise serializers.ValidationError(
-                'Вы уже оставили отзыв на это произведение.'
-            )
+    def validate_score(self, score):
+        return validate_score_1_to_10(score)
 
-
-class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
-    title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
-    )
-    review = serializers.SlugRelatedField(
-        read_only=True, slug_field='text'
-    )
-
-    class Meta:
-        model = Comment
-        fields = '__all__'
+    def validate(self, data):
+        if Review.objects.filter(
+                title_id=self.context['view'].kwargs['title_id'],
+                author=self.context['request'].user
+        ).exists() and self.context['request'].method == 'POST':
+            raise exceptions.ValidationError(REVIEW_VALIDATE_ERROR)
+        return data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True, )
+    category = CategorySerializer()
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category'
+        )
+        read_only_fields = fields
+
+
+class TitleCRUDSerializer(TitleReadSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -120,20 +118,20 @@ class TitleReadSerializer(serializers.ModelSerializer):
         slug_field='slug'
     )
 
+    class Meta(TitleReadSerializer.Meta):
+        read_only_fields = ()
+
+    def validate_year(self, creation_year):
+        return validate_creation_year(creation_year)
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+    title = TitleReadSerializer(read_only=True)
+    review = ReviewSerializer(read_only=True)
+
     class Meta:
-        model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
-
-
-class TitleUpdateSerializer(TitleReadSerializer):
-    rating = serializers.FloatField(read_only=True)
-
-    def to_representation(self, title):
-        representation = super().to_representation(title)
-        representation['category'] = CategorySerializer(title.category).data
-        representation['genre'] = GenreSerializer(
-            title.genre.all(), many=True
-        ).data
-        return representation
+        model = Comment
+        fields = '__all__'

@@ -1,13 +1,12 @@
 from datetime import datetime as dt
 
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator
 from django.core.validators import RegexValidator
 from django.db import models
 
 import reviews.constants as const
-from api.utilits import validate_username_chars
-from reviews.utilits import calculate_max_length
+from .utilits import calculate_max_length
+from .validators import validate_creation_year, validate_username_chars
 
 
 class NameSlugModel(models.Model):
@@ -52,21 +51,15 @@ class Genre(NameSlugModel):
 
 
 class Title(models.Model):
-    """Модель произведений. Умолчательная сортировка по категории."""
+    """Модель произведений. Умолчательная сортировка по категории и имени."""
 
     name = models.CharField(
-        max_length=const.MAX_CONTENT_NAME, verbose_name='Название'
+        max_length=const.MAX_CONTENT_NAME,
+        verbose_name='Название'
     )
     year = models.IntegerField(
         verbose_name='Год создания',
-        validators=(
-            MaxValueValidator(
-                dt.today().year,
-                message=const.VALIDATE_YEAR_ERROR.format(
-                    this_year=dt.today().year
-                )
-            ),
-        )
+        validators=(validate_creation_year,)
     )
     category = models.ForeignKey(
         Category,
@@ -78,9 +71,6 @@ class Title(models.Model):
         verbose_name='Жанр',
     )
     description = models.TextField(verbose_name='Описание', null=True)
-
-    def __str__(self):
-        return self.name[:20]
 
     class Meta:
         default_related_name = 'titles'
@@ -94,9 +84,19 @@ class Title(models.Model):
             )
         ]
 
+    def __str__(self):
+        return self.name[:20]
+
+    def get_current_year(self):
+        return dt.today().year
+
 
 class User(AbstractUser):
-    """Дополнительные поля к базовой модели auth_user."""
+    """
+    Модель пользователя с дополнительными полями:
+    роль, биография, код подтверждения.
+    Расширяет стандартную модель Django пользователя.
+    """
 
     username = models.CharField(
         verbose_name='Пользователь',
@@ -107,6 +107,7 @@ class User(AbstractUser):
                 regex=const.USERNAME_REGEX,
                 message=const.USER_NAME_INVALID_MSG,
             ),
+            validate_username_chars,
         ],
     )
     email = models.EmailField(
@@ -128,14 +129,10 @@ class User(AbstractUser):
     )
     confirmation_code = models.CharField(
         verbose_name='Код подтверждения',
-        max_length=6,
+        max_length=const.MAX_LENGTH_CONFIRMATION_CODE,
         null=True,
         blank=True,
     )
-
-    def clean(self):
-        super().clean()
-        validate_username_chars(self.username)
 
     class Meta:
         ordering = ('username',)
@@ -147,14 +144,18 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.is_superuser or self.role == const.ADMIN
+        return (
+                self.is_superuser
+                or self.role == const.ADMIN
+                or self.is_staff
+        )
 
     @property
     def is_moderator(self):
         return self.role == const.MODERATOR
 
 
-class InteractionsModel(models.Model):
+class TextAuthorPubdateModel(models.Model):
     """
     Абстрактная модель для наследования
     моделей взаимодействия пользователей с ресурсами.
@@ -167,7 +168,8 @@ class InteractionsModel(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name='%(class)s'
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -179,28 +181,28 @@ class InteractionsModel(models.Model):
         ordering = ('-pub_date',)
 
 
-class Review(InteractionsModel):
+class Review(TextAuthorPubdateModel):
     """Модель отзыва для произведения."""
 
     score = models.PositiveIntegerField(
         verbose_name='Оценка пользователя',
         choices=[(i, str(i)) for i in range(
             const.MIN_SCORE, const.MAX_SCORE + 1
-        )]
+        )],
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
+        related_name='%(class)s',
         verbose_name='Произведение'
     )
 
     def __str__(self):
         return f'Отзыв на {self.title.name[:20]} от {self.author.username}'
 
-    class Meta(InteractionsModel.Meta):
+    class Meta(TextAuthorPubdateModel.Meta):
         verbose_name = 'отзыв'
         verbose_name_plural = 'Отзывы'
-        default_related_name = 'reviews'
         constraints = [
             models.UniqueConstraint(
                 fields=['author', 'title'],
@@ -209,24 +211,25 @@ class Review(InteractionsModel):
         ]
 
 
-class Comment(InteractionsModel):
+class Comment(TextAuthorPubdateModel):
     """Модель комментария к отзыву."""
 
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        verbose_name='Отзыв'
+        verbose_name='Отзыв',
+        related_name='%(class)s',
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
+        related_name='%(class)s',
         verbose_name='Произведение'
     )
 
     def __str__(self):
-        return f'Комментарий к отзыву {self.review.text[:20]}'
+        return f'Комментарий {self.text[:20]} к отзыву {self.review.text[:20]}'
 
-    class Meta(InteractionsModel.Meta):
+    class Meta(TextAuthorPubdateModel.Meta):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        default_related_name = 'comments'

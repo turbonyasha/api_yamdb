@@ -9,6 +9,7 @@ from api_yamdb.settings import STATICFILES_DIRS
 
 FILES_DIR = STATICFILES_DIRS[0].as_posix() + '/data/'
 
+
 # Сообщения скрипта
 
 HELP = 'Импорт данных из CSV-файлов для учебного проекта API_YamDB.'
@@ -17,6 +18,7 @@ MANY_TO_MANY_SUCCESS = ('Связь между произведением "{titl
                         'и жанром "{genre}" загружена.')
 MODEL_SUCCESS = 'Данные модели {model} загружены.'
 FILE_NOT_FOUND = 'Файл {path} для модели {model} не найден.'
+
 
 # Адреса файлов и модели для загрузки
 
@@ -57,7 +59,7 @@ class Command(BaseCommand):
         return data
 
     def title_genre_handle(self, path):
-        with open(path, 'r') as csv_file:
+        with open(path, 'r', encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             headers = next(reader)
             for row in reader:
@@ -81,7 +83,7 @@ class Command(BaseCommand):
                 if not model:
                     self.title_genre_handle(path)
                     continue
-                with open(path, 'r') as csv_file:
+                with open(path, 'r', encoding='utf-8') as csv_file:
                     reader = csv.reader(csv_file)
                     headers = next(reader)
                     for row in reader:
