@@ -1,5 +1,7 @@
+import random
+
 from django.db import IntegrityError
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
@@ -10,8 +12,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 import api.constants as const
 from api.constants import USERNAME_ME
+from api_yamdb import settings
 from reviews.models import User, Category, Genre, Title, Review
-from reviews.utilits import generate_confirmation_code
 from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
@@ -55,16 +57,13 @@ class UserViewSet(viewsets.ModelViewSet):
         """Получение или обновление данных пользователя."""
         if request.method != 'PATCH':
             return Response(UserSerializer(request.user).data)
-
         serializer = UserSerializer(
             request.user,
             data=request.data,
             partial=True
         )
-
         serializer.is_valid(raise_exception=True)
         serializer.save(role=request.user.role)
-
         return Response(
             serializer.data,
             status=status.HTTP_200_OK
@@ -77,33 +76,33 @@ def register_user(request):
     """Регистрация нового пользователя."""
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
     try:
         user, created = User.objects.get_or_create(
             email=serializer.validated_data['email'],
             username=serializer.validated_data['username'],
         )
     except IntegrityError:
-        if User.objects.filter(
-                email=serializer.validated_data['email']
-        ).exists():
-            raise ValidationError(
-                {'email': const.USER_REGISTER_ERROR}
-            )
-
-        if User.objects.filter(
-                username=serializer.validated_data['username']
-        ).exists():
-            raise ValidationError(
-                {'username': const.EMAIL_REGISTER_ERROR}
-            )
-
-    confirmation_code = generate_confirmation_code()
+        errors = {}
+        exist_user = User.objects.filter(
+            Q(email=serializer.validated_data['email']) |
+            Q(username=serializer.validated_data['username'])
+        ).first()
+        if exist_user:
+            if exist_user.email == serializer.validated_data['email']:
+                errors['email'] = const.EMAIL_REGISTER_ERROR
+            if exist_user.username == serializer.validated_data['username']:
+                errors['username'] = const.USER_REGISTER_ERROR
+        if errors:
+            raise ValidationError(errors)
+    confirmation_code = ''.join(
+        random.choices(
+            settings.CONFIRMATION_CODE_CHARACTERS,
+            k=settings.CONFIRMATION_CODE_LENGTH
+        )
+    )
     user.confirmation_code = confirmation_code
     user.save()
-
     send_confirmation_code(user, confirmation_code)
-
     return Response(
         serializer.data,
         status=status.HTTP_200_OK
@@ -120,21 +119,19 @@ def get_user_token(request):
     serializer.is_valid(
         raise_exception=True
     )
-
     user = get_object_or_404(
         User,
         username=serializer.validated_data['username']
     )
-
-    if user.confirmation_code != serializer.validated_data[
-        'confirmation_code'
-    ]:
+    if (not user.confirmation_code
+            or user.confirmation_code != serializer.validated_data[
+                'confirmation_code'
+            ]):
         raise ValidationError(
             {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
-    user.confirmation_code = None
+    user.confirmation_code = ''
     user.save()
-
     return Response(
         {'token': str(AccessToken.for_user(user))},
         status=status.HTTP_200_OK
