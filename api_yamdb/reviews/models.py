@@ -5,9 +5,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 import reviews.constants as const
-from api.utilits import validate_username_chars
 from .utilits import calculate_max_length
-from .validators import validate_creation_year
+from .validators import validate_creation_year, validate_username_chars
 
 
 class NameSlugModel(models.Model):

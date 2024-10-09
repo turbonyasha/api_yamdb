@@ -1,12 +1,11 @@
-from django.db import IntegrityError
 from django.core.validators import RegexValidator
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 import reviews.constants as const
-from api.utilits import validate_username_chars
-import reviews.constants as const
 from reviews.models import Category, Comment, Genre, Review, Title, User
-from reviews.validators import validate_creation_year
+from reviews.validators import (
+    validate_creation_year, validate_username_chars, validate_score_1_to_10
+)
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -45,9 +44,8 @@ class UserRegistrationSerializer(serializers.Serializer):
         required=True,
     )
 
-    def validate_username(self, value):
-        validate_username_chars(value)
-        return value
+    def validate_username(self, username):
+        return validate_username_chars(username)
 
 
 class GetTokenSerializer(serializers.Serializer):
@@ -85,17 +83,17 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate_score(self, score):
-        if not (1 <= score <= 10):
-            raise serializers.ValidationError(const.REVIEW_SCORE_ERROR)
-        return score
+        return validate_score_1_to_10(score)
 
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except IntegrityError:
-            raise serializers.ValidationError(
+    def validate(self, data):
+        if Review.objects.filter(
+            title_id=self.context['view'].kwargs['title_id'],
+            author=self.context['request'].user
+        ).exists() and self.context['request'].method == 'POST':
+            raise exceptions.ValidationError(
                 'Вы уже оставили отзыв на это произведение.'
             )
+        return data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
