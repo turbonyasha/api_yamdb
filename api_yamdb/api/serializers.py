@@ -84,10 +84,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
 
-    def validate_score(self, value):
-        if not (1 <= value <= 10):
+    def validate_score(self, score):
+        if not (1 <= score <= 10):
             raise serializers.ValidationError(const.REVIEW_SCORE_ERROR)
-        return value
+        return score
 
     def create(self, validated_data):
         try:
@@ -96,22 +96,6 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Вы уже оставили отзыв на это произведение.'
             )
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
-    title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
-    )
-    review = serializers.SlugRelatedField(
-        read_only=True, slug_field='text'
-    )
-
-    class Meta:
-        model = Comment
-        fields = '__all__'
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
@@ -143,3 +127,15 @@ class TitleCRUDSerializer(TitleReadSerializer):
 
     def validate_year(self, creation_year):
         return validate_creation_year(creation_year)
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+    title = TitleReadSerializer(read_only=True)
+    review = ReviewSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = '__all__'

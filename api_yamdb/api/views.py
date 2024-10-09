@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 import api.constants as const
-from reviews.constants import USERNAME_ME
+from api.constants import USERNAME_ME
 from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (

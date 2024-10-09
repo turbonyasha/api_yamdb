@@ -11,7 +11,6 @@ MAX_SCORE = 10
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
-USERNAME_ME = 'me'
 ROLE_CHOICES = [
     (USER, 'Пользователь'),
     (ADMIN, 'Администратор'),

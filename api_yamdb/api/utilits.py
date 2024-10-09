@@ -3,7 +3,7 @@ import re
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 
-from api.constants import SEND_MAIL_MESSAGE
+from .constants import SEND_MAIL_MESSAGE, USERNAME_ME
 from api_yamdb import settings
 import reviews.constants as const
 
@@ -11,7 +11,7 @@ import reviews.constants as const
 def send_confirmation_code(user, confirmation_code):
     """Отправляет код подтверждения на email пользователя."""
     send_mail(
-        subject='Самый секретный код для входа',
+        subject='Код подтверждения',
         message=SEND_MAIL_MESSAGE.format(
             confirmation_code=confirmation_code
         ),
@@ -26,7 +26,7 @@ def validate_username_chars(username):
     недопустимые символы.
     """
 
-    if username.lower() == 'me':
+    if username.lower() == USERNAME_ME:
         raise ValidationError(
             f'Имя \'{username}\' недопустимо. '
             f'Придумайте другое.'
