@@ -1,5 +1,3 @@
-import random
-
 from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -13,12 +11,14 @@ from rest_framework_simplejwt.tokens import AccessToken
 import api.constants as const
 from api.constants import USERNAME_ME
 from reviews.models import User, Category, Genre, Title, Review
+from reviews.utilits import generate_confirmation_code
 from .filters import TitleFilter
 from .permissions import (
-    AdminOnlyPermission, IsAuthorAdminOrReadOnly, AdminPermission
+    AdminOnlyPermission,
+    AdminOrSafeMethodPermission,
+    IsAuthorAdminOrReadOnly,
 )
 from .serializers import (
-    BasicUserSerializer,
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
@@ -53,28 +53,22 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def profile(self, request):
         """Получение или обновление данных пользователя."""
-        if request.method == 'PATCH':
-            if request.user.is_admin:
-                serializer = UserSerializer(
-                    request.user,
-                    data=request.data,
-                    partial=True)
-            else:
-                serializer = BasicUserSerializer(
-                    request.user,
-                    data=request.data,
-                    partial=True)
+        if request.method != 'PATCH':
+            return Response(UserSerializer(request.user).data)
 
-            serializer.is_valid(raise_exception=True)
-            serializer.save(role=request.user.role)
+        serializer = UserSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
 
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(role=request.user.role)
 
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
 
 @api_view(['POST'])
@@ -89,26 +83,27 @@ def register_user(request):
             email=serializer.validated_data['email'],
             username=serializer.validated_data['username'],
         )
-    except IntegrityError as e:
-        error_message = str(e).lower()
-        if 'email' in error_message:
+    except IntegrityError:
+        if User.objects.filter(
+                email=serializer.validated_data['email']
+        ).exists():
             raise ValidationError(
-                {'email': const.EMAIL_REGISTER_ERROR}
-            )
-        elif 'username' in error_message:
-            raise ValidationError(
-                {'username': const.USER_REGISTER_ERROR}
-            )
-        else:
-            raise ValidationError(
-                {'error': 'Неизвестная ошибка.'}
+                {'email': const.USER_REGISTER_ERROR}
             )
 
-    confirmation_code = str(random.randint(0, 999_999))
+        if User.objects.filter(
+                username=serializer.validated_data['username']
+        ).exists():
+            raise ValidationError(
+                {'username': const.EMAIL_REGISTER_ERROR}
+            )
+
+    confirmation_code = generate_confirmation_code()
     user.confirmation_code = confirmation_code
     user.save()
 
     send_confirmation_code(user, confirmation_code)
+
     return Response(
         serializer.data,
         status=status.HTTP_200_OK
@@ -137,6 +132,8 @@ def get_user_token(request):
         raise ValidationError(
             {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
+    user.confirmation_code = None
+    user.save()
 
     return Response(
         {'token': str(AccessToken.for_user(user))},
@@ -152,7 +149,7 @@ class ContentGenericViewSet(
     viewsets.GenericViewSet
 ):
     """Представление для работы с категориями и жанрами."""
-    permission_classes = (AdminPermission,)
+    permission_classes = (AdminOrSafeMethodPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -177,7 +174,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('review__score')
     ).order_by(*Title._meta.ordering)
-    permission_classes = (AdminPermission,)
+    permission_classes = (AdminOrSafeMethodPermission,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     http_method_names = const.ALLOWED_HTTP_METHODS

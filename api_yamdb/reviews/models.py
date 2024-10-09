@@ -92,7 +92,11 @@ class Title(models.Model):
 
 
 class User(AbstractUser):
-    """Дополнительные поля к базовой модели auth_user."""
+    """
+    Модель пользователя с дополнительными полями:
+    роль, биография, код подтверждения.
+    Расширяет стандартную модель Django пользователя.
+    """
 
     username = models.CharField(
         verbose_name='Пользователь',
@@ -103,6 +107,7 @@ class User(AbstractUser):
                 regex=const.USERNAME_REGEX,
                 message=const.USER_NAME_INVALID_MSG,
             ),
+            validate_username_chars,
         ],
     )
     email = models.EmailField(
@@ -124,14 +129,10 @@ class User(AbstractUser):
     )
     confirmation_code = models.CharField(
         verbose_name='Код подтверждения',
-        max_length=6,
+        max_length=const.MAX_LENGTH_CONFIRMATION_CODE,
         null=True,
         blank=True,
     )
-
-    def clean(self):
-        super().clean()
-        validate_username_chars(self.username)
 
     class Meta:
         ordering = ('username',)
@@ -143,7 +144,11 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.is_superuser or self.role == const.ADMIN
+        return (
+                self.is_superuser
+                or self.role == const.ADMIN
+                or self.is_staff
+        )
 
     @property
     def is_moderator(self):

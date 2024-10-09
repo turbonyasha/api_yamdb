@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class AdminPermission(BasePermission):
+class AdminOrSafeMethodPermission(BasePermission):
     """
     Разрешает доступ всем пользователям для безопасных методов запроса,
     в остальных случаях — только администраторам.
