@@ -145,9 +145,9 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return (
-                self.is_superuser
-                or self.role == const.ADMIN
-                or self.is_staff
+            self.is_superuser
+            or self.role == const.ADMIN
+            or self.is_staff
         )
 
     @property
