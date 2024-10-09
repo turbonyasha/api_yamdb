@@ -11,10 +11,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 import api.constants as const
+from reviews.constants import USERNAME_ME
 from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (
-    AdminOnlyPermission, InteractionSectionPermissions, AdminPermission
+    AdminOnlyPermission, IsAuthorAdminOrReadOnly, AdminPermission
 )
 from .serializers import (
     BasicUserSerializer,
@@ -46,7 +47,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['GET', 'PATCH'],
-        url_path=const.USERNAME_ME,
+        url_path=USERNAME_ME,
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
@@ -191,7 +192,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     для модели отзывов на произведени.
     """
     serializer_class = ReviewSerializer
-    permission_classes = [InteractionSectionPermissions]
+    permission_classes = [IsAuthorAdminOrReadOnly]
     http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_title(self):
@@ -210,7 +211,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     для модели комментариев к отзывам на произведения.
     """
     serializer_class = CommentSerializer
-    permission_classes = [InteractionSectionPermissions]
+    permission_classes = [IsAuthorAdminOrReadOnly]
     http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_review(self):

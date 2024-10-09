@@ -1,10 +1,8 @@
-from rest_framework import serializers
 from django.db import IntegrityError
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 import reviews.constants as const
-from api.constants import MAX_LENGTH_EMAIL
 from api.utilits import validate_username_chars
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
@@ -41,7 +39,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         required=True,
     )
     email = serializers.EmailField(
-        max_length=MAX_LENGTH_EMAIL,
+        max_length=const.MAX_LENGTH_EMAIL,
         required=True,
     )
 
@@ -83,6 +81,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
+
+    def validate_score(self, value):
+        if not (1 <= value <= 10):
+            raise serializers.ValidationError(const.REVIEW_SCORE_ERROR)
+        return value
 
     def create(self, validated_data):
         try:

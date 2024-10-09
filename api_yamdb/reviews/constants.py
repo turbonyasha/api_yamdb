@@ -4,12 +4,14 @@ MAX_LENGTH_USERNAME = 150
 MAX_LENGTH_UUID = 36
 MAX_CONTENT_NAME = 256
 MAX_CONTENT_SLUG = 50
+MAX_LENGTH_EMAIL = 254
 MIN_SCORE = 1
 MAX_SCORE = 10
 
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
+USERNAME_ME = 'me'
 ROLE_CHOICES = [
     (USER, 'Пользователь'),
     (ADMIN, 'Администратор'),
