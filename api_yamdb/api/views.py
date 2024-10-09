@@ -173,7 +173,7 @@ class CategoryViewSet(ContentGenericViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
     queryset = Title.objects.annotate(
-        rating=Avg('reviews__score')
+        rating=Avg('review__score')
     ).order_by(*Title._meta.ordering)
     permission_classes = (AdminPermission,)
     filter_backends = (DjangoFilterBackend,)
@@ -199,7 +199,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title().reviews.all()
+        return self.get_title().review.all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, title=self.get_title())
@@ -218,7 +218,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Review, pk=self.kwargs['review_id'])
 
     def get_queryset(self):
-        return self.get_review().comments.all()
+        return self.get_review().comment.all()
 
     def perform_create(self, serializer):
         review = self.get_review()
