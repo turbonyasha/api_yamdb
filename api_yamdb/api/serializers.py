@@ -1,11 +1,10 @@
-from django.core.validators import RegexValidator
 from rest_framework import serializers, exceptions
 
 from .constants import REVIEW_VALIDATE_ERROR
 import reviews.constants as const
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from reviews.validators import (
-    validate_creation_year, validate_username_chars, validate_score_1_to_10
+    validate_creation_year, validate_username_chars, validate_score
 )
 
 
@@ -21,19 +20,11 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         )
 
-    read_only_fields = ('role',)
-
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=const.MAX_LENGTH_USERNAME,
-        validators=[
-            RegexValidator(
-                regex=const.USERNAME_REGEX,
-                message=const.USER_NAME_INVALID_MSG,
-            ),
-            validate_username_chars
-        ],
+        validators=[validate_username_chars],
         required=True,
     )
     email = serializers.EmailField(
@@ -45,7 +36,8 @@ class UserRegistrationSerializer(serializers.Serializer):
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=const.MAX_LENGTH_USERNAME,
-        required=True
+        required=True,
+        validators=[validate_username_chars]
     )
     confirmation_code = serializers.CharField(
         required=True
@@ -68,22 +60,25 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
-    )
 
     class Meta:
         model = Review
-        fields = '__all__'
+        fields = (
+            'id',
+            'text',
+            'author',
+            'score',
+            'pub_date'
+        )
 
     def validate_score(self, score):
-        return validate_score_1_to_10(score)
+        return validate_score(score)
 
     def validate(self, data):
-        if Review.objects.filter(
+        if self.context['request'].method == 'POST' and Review.objects.filter(
                 title_id=self.context['view'].kwargs['title_id'],
                 author=self.context['request'].user
-        ).exists() and self.context['request'].method == 'POST':
+        ).exists():
             raise exceptions.ValidationError(REVIEW_VALIDATE_ERROR)
         return data
 
@@ -96,18 +91,12 @@ class TitleReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id',
-            'name',
-            'year',
-            'rating',
-            'description',
-            'genre',
-            'category'
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
         read_only_fields = fields
 
 
-class TitleCRUDSerializer(TitleReadSerializer):
+class TitleCreateUpdateSerializer(TitleReadSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -118,8 +107,9 @@ class TitleCRUDSerializer(TitleReadSerializer):
         slug_field='slug'
     )
 
-    class Meta(TitleReadSerializer.Meta):
-        read_only_fields = ()
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate_year(self, creation_year):
         return validate_creation_year(creation_year)
@@ -129,9 +119,12 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title = TitleReadSerializer(read_only=True)
-    review = ReviewSerializer(read_only=True)
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = (
+            'id',
+            'text',
+            'author',
+            'pub_date'
+        )

@@ -1,11 +1,8 @@
-from datetime import datetime as dt
-
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from django.db import models
 
 import reviews.constants as const
-from .utilits import calculate_max_length
+from api_yamdb.settings import CONFIRMATION_CODE_LENGTH
 from .validators import validate_creation_year, validate_username_chars
 
 
@@ -15,7 +12,6 @@ class NameSlugModel(models.Model):
     Умолчательная сортировка по полю названия.
     Представление объекта класса тоже по полю названия.
     """
-
     name = models.CharField(
         max_length=const.MAX_CONTENT_NAME,
         verbose_name='Название'
@@ -87,9 +83,6 @@ class Title(models.Model):
     def __str__(self):
         return self.name[:20]
 
-    def get_current_year(self):
-        return dt.today().year
-
 
 class User(AbstractUser):
     """
@@ -98,38 +91,37 @@ class User(AbstractUser):
     Расширяет стандартную модель Django пользователя.
     """
 
+    ROLE_CHOICES = [
+        (const.USER, 'Пользователь'),
+        (const.ADMIN, 'Администратор'),
+        (const.MODERATOR, 'Модератор'),
+    ]
+
     username = models.CharField(
-        verbose_name='Пользователь',
+        verbose_name='Имя пользователя',
         unique=True,
         max_length=const.MAX_LENGTH_USERNAME,
-        validators=[
-            RegexValidator(
-                regex=const.USERNAME_REGEX,
-                message=const.USER_NAME_INVALID_MSG,
-            ),
-            validate_username_chars,
-        ],
+        validators=[validate_username_chars],
     )
     email = models.EmailField(
         verbose_name='Почта',
         max_length=const.MAX_LENGTH_EMAIL,
         unique=True,
     )
-    bio = models.CharField(
+    bio = models.TextField(
         verbose_name='Биография',
-        max_length=const.MAX_LENGTH_BIO,
         null=True,
         blank=True,
     )
     role = models.CharField(
         verbose_name='Роль',
-        max_length=calculate_max_length(const.ROLE_CHOICES),
-        choices=const.ROLE_CHOICES,
+        max_length=max(len(choice[0]) for choice in ROLE_CHOICES),
+        choices=ROLE_CHOICES,
         default=const.USER,
     )
     confirmation_code = models.CharField(
         verbose_name='Код подтверждения',
-        max_length=const.MAX_LENGTH_CONFIRMATION_CODE,
+        max_length=CONFIRMATION_CODE_LENGTH,
         null=True,
         blank=True,
     )
@@ -144,11 +136,7 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return (
-            self.is_superuser
-            or self.role == const.ADMIN
-            or self.is_staff
-        )
+        return self.role == const.ADMIN or self.is_staff
 
     @property
     def is_moderator(self):
@@ -169,7 +157,7 @@ class TextAuthorPubdateModel(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='%(class)s'
+        related_name=const.CLASS_NAME
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -193,7 +181,7 @@ class Review(TextAuthorPubdateModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='%(class)s',
+        related_name=const.CLASS_NAME,
         verbose_name='Произведение'
     )
 
@@ -218,12 +206,12 @@ class Comment(TextAuthorPubdateModel):
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзыв',
-        related_name='%(class)s',
+        related_name=const.CLASS_NAME,
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='%(class)s',
+        related_name=const.CLASS_NAME,
         verbose_name='Произведение'
     )
 
