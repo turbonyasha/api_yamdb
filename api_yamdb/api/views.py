@@ -1,5 +1,7 @@
+import hashlib
 import random
 
+from django.core.cache import cache
 from django.db import IntegrityError
 from django.db.models import Avg, Q
 from django.shortcuts import get_object_or_404
@@ -99,7 +101,9 @@ def register_user(request):
             k=settings.CONFIRMATION_CODE_LENGTH
         )
     )
-    user.confirmation_code = confirmation_code
+    user.confirmation_code = hashlib.sha256(
+        confirmation_code.encode()
+    ).hexdigest()
     user.save()
     send_confirmation_code(user, confirmation_code)
     return Response(
@@ -122,14 +126,26 @@ def get_user_token(request):
         User,
         username=serializer.validated_data['username']
     )
+    cache_key = 'failed_attempts'
+    failed_attempts = cache.get(cache_key, 0)
+    if failed_attempts >= 5:
+        raise ValidationError(
+            {'error_attempts': const.ATTEMPTS_ERROR}
+        )
+    input_code = serializer.validated_data['confirmation_code']
+    hashed_input_code = hashlib.sha256(
+        input_code.encode()
+    ).hexdigest()
     if (not user.confirmation_code
-            or user.confirmation_code != serializer.validated_data[
-                'confirmation_code'
-            ]):
+            or user.confirmation_code != hashed_input_code):
+        cache.set(
+            key=cache_key,
+            value=failed_attempts + 1,
+            timeout=300)
         raise ValidationError(
             {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
-    user.confirmation_code = ''
+    user.confirmation_code = hashlib.sha256('empty'.encode()).hexdigest()
     user.save()
     return Response(
         {'token': str(AccessToken.for_user(user))},
