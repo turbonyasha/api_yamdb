@@ -117,8 +117,10 @@ def get_user_token(request):
         username=serializer.validated_data['username']
     )
     input_code = serializer.validated_data['confirmation_code']
-    if (not user.confirmation_code
-            or user.confirmation_code != input_code):
+    if (
+        not user.confirmation_code
+        or user.confirmation_code != input_code
+    ):
         raise ValidationError(
             {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
