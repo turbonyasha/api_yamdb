@@ -14,7 +14,11 @@ def validate_username_chars(username):
     недопустимые символы.
     """
     if username == apiconst.USERNAME_ME:
-        raise ValidationError(reviewconst.USER_REGISTER_NAME_ERROR)
+        raise ValidationError(
+            reviewconst.USER_REGISTER_NAME_ERROR.format(
+                username=username
+            )
+        )
     invalid_chars = set(re.sub(reviewconst.USERNAME_REGEX, '', username))
     if invalid_chars:
         raise ValidationError(
