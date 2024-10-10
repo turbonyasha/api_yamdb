@@ -13,11 +13,11 @@ class NameSlugModel(models.Model):
     Представление объекта класса тоже по полю названия.
     """
     name = models.CharField(
-        max_length=const.MAX_CONTENT_NAME,
+        max_length=const.MAX_CONTENT_LENGTH_NAME,
         verbose_name='Название'
     )
     slug = models.SlugField(
-        max_length=const.MAX_CONTENT_SLUG,
+        max_length=const.MAX_CONTENT_LENGTH_SLUG,
         unique=True,
         verbose_name='Идентификатор'
     )
@@ -50,7 +50,7 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории и имени."""
 
     name = models.CharField(
-        max_length=const.MAX_CONTENT_NAME,
+        max_length=const.MAX_CONTENT_LENGTH_NAME,
         verbose_name='Название'
     )
     year = models.IntegerField(
@@ -98,7 +98,7 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        verbose_name='Имя пользователя',
+        verbose_name='Имя',
         unique=True,
         max_length=const.MAX_LENGTH_USERNAME,
         validators=[validate_username_chars],
@@ -157,7 +157,6 @@ class TextAuthorPubdateModel(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name=const.CLASS_NAME
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -167,6 +166,7 @@ class TextAuthorPubdateModel(models.Model):
     class Meta:
         abstract = True
         ordering = ('-pub_date',)
+        default_related_name = '%(class)ss'
 
 
 class Review(TextAuthorPubdateModel):
@@ -181,7 +181,6 @@ class Review(TextAuthorPubdateModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name=const.CLASS_NAME,
         verbose_name='Произведение'
     )
 
@@ -206,12 +205,10 @@ class Comment(TextAuthorPubdateModel):
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзыв',
-        related_name=const.CLASS_NAME,
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name=const.CLASS_NAME,
         verbose_name='Произведение'
     )
 
