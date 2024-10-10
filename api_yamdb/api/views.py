@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 import api.constants as const
-from api.constants import USERNAME_ME
 from api_yamdb import settings
 from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
@@ -27,7 +26,7 @@ from .serializers import (
     GetTokenSerializer,
     ReviewSerializer,
     TitleReadSerializer,
-    TitleCRUDSerializer,
+    TitleCreateUpdateSerializer,
     UserRegistrationSerializer,
     UserSerializer,
 )
@@ -49,7 +48,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['GET', 'PATCH'],
-        url_path=USERNAME_ME,
+        url_path=const.USERNAME_ME,
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
@@ -84,8 +83,8 @@ def register_user(request):
     except IntegrityError:
         errors = {}
         exist_user = User.objects.filter(
-            Q(email=serializer.validated_data['email']) |
-            Q(username=serializer.validated_data['username'])
+            Q(email=serializer.validated_data['email'])
+            | Q(username=serializer.validated_data['username'])
         ).first()
         if exist_user:
             if exist_user.email == serializer.validated_data['email']:
@@ -138,13 +137,11 @@ def get_user_token(request):
     )
 
 
-class ContentGenericViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class ContentViewSet(mixins.ListModelMixin,
+                     mixins.CreateModelMixin,
+                     mixins.UpdateModelMixin,
+                     mixins.DestroyModelMixin,
+                     viewsets.GenericViewSet):
     """Представление для работы с категориями и жанрами."""
     permission_classes = (AdminOrSafeMethodPermission,)
     filter_backends = (filters.SearchFilter,)
@@ -154,13 +151,13 @@ class ContentGenericViewSet(
     http_method_names = const.ALLOWED_HTTP_METHODS_CATEGORY_GENRE
 
 
-class GenreViewSet(ContentGenericViewSet):
+class GenreViewSet(ContentViewSet):
     """Представление для работы только с жанрами."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
-class CategoryViewSet(ContentGenericViewSet):
+class CategoryViewSet(ContentViewSet):
     """Представление для работы только с категориями."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -179,7 +176,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
-        return TitleCRUDSerializer
+        return TitleCreateUpdateSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

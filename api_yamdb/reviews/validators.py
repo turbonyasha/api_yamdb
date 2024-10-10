@@ -27,12 +27,14 @@ def validate_creation_year(creation_year):
     this_year = dt.today().year
     if creation_year > this_year:
         raise serializers.ValidationError(
-            reviewconst.VALIDATE_YEAR_ERROR.format(this_year=this_year)
+            reviewconst.VALIDATE_YEAR_ERROR.format(
+                this_year=this_year, input_year=creation_year
+            )
         )
     return creation_year
 
 
-def validate_score_1_to_10(value):
-    if not (1 <= value <= 10):
+def validate_score(score):
+    if not (reviewconst.MIN_SCORE <= score <= reviewconst.MAX_SCORE):
         raise serializers.ValidationError(reviewconst.REVIEW_SCORE_ERROR)
-    return value
+    return score
