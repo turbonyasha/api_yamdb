@@ -55,7 +55,7 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
         if is_safe_method(request):
             return True
         return (
-            request.user.is_authenticated 
+            request.user.is_authenticated
             or is_authenticated_managers(request)
         )
 
