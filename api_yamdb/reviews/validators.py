@@ -23,7 +23,7 @@ def validate_username_chars(username):
         invalid_chars_str = ', '.join(repr_chars)
         raise ValidationError(
             const.INVALID_USERNAME_CHARS.format(
-                invalid_chars=invalid_chars
+                invalid_chars=invalid_chars_str
             )
         )
     return username
