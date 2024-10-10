@@ -28,8 +28,8 @@ def is_authenticated_managers(request):
     admin_permission = AdminOnlyPermission()
     moderator_permission = ModeratorOnlyPermission()
     return (
-        admin_permission.has_permission(request, None) or
-        moderator_permission.has_permission(request, None)
+        admin_permission.has_permission(request, None)
+        or moderator_permission.has_permission(request, None)
     )
 
 
