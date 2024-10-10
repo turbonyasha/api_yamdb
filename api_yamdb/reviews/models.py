@@ -13,11 +13,11 @@ class NameSlugModel(models.Model):
     Представление объекта класса тоже по полю названия.
     """
     name = models.CharField(
-        max_length=const.MAX_CONTENT_LENGTH_NAME,
+        max_length=const.MAX_LENGTH_NAME,
         verbose_name='Название'
     )
     slug = models.SlugField(
-        max_length=const.MAX_CONTENT_LENGTH_SLUG,
+        max_length=const.MAX_LENGTH_SLUG,
         unique=True,
         verbose_name='Идентификатор'
     )
@@ -50,7 +50,7 @@ class Title(models.Model):
     """Модель произведений. Умолчательная сортировка по категории и имени."""
 
     name = models.CharField(
-        max_length=const.MAX_CONTENT_LENGTH_NAME,
+        max_length=const.MAX_LENGTH_NAME,
         verbose_name='Название'
     )
     year = models.IntegerField(
@@ -98,7 +98,7 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        verbose_name='Имя',
+        verbose_name='Логин',
         unique=True,
         max_length=const.MAX_LENGTH_USERNAME,
         validators=[validate_username_chars],
