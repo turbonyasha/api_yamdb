@@ -98,7 +98,7 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        verbose_name='Имя пользователя',
+        verbose_name='Имя',
         unique=True,
         max_length=const.MAX_LENGTH_USERNAME,
         validators=[validate_username_chars],
@@ -115,7 +115,7 @@ class User(AbstractUser):
     )
     role = models.CharField(
         verbose_name='Роль',
-        max_length=max(len(choice[0]) for choice in ROLE_CHOICES),
+        max_length=max(len(role) for role, _ in ROLE_CHOICES),
         choices=ROLE_CHOICES,
         default=const.USER,
     )
@@ -157,7 +157,6 @@ class TextAuthorPubdateModel(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name=const.CLASS_NAME
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -167,6 +166,7 @@ class TextAuthorPubdateModel(models.Model):
     class Meta:
         abstract = True
         ordering = ('-pub_date',)
+        default_related_name = '%(class)ss'
 
 
 class Review(TextAuthorPubdateModel):
@@ -181,7 +181,7 @@ class Review(TextAuthorPubdateModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name=const.CLASS_NAME,
+        # related_name='%(class)ss',
         verbose_name='Произведение'
     )
 
@@ -206,12 +206,12 @@ class Comment(TextAuthorPubdateModel):
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзыв',
-        related_name=const.CLASS_NAME,
+        # related_name='%(class)ss',
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name=const.CLASS_NAME,
+        # related_name='%(class)ss',
         verbose_name='Произведение'
     )
 

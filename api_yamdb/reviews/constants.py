@@ -8,6 +8,7 @@ USERNAME_REGEX = r'^[\w.@+-]+\Z'
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
+USERNAME_ME = 'me'
 VALIDATE_YEAR_ERROR = (
     'Произведение не может быть создано в {imput_year} году, '
     'это позднее текущего года: {this_year}. '
@@ -18,4 +19,7 @@ USER_REGISTER_NAME_ERROR = (
 INVALID_USERNAME_CHARS = (
     'Поле username содержит недопустимые символы: {invalid_chars}'
 )
-CLASS_NAME = '%(class)ss'
+REVIEW_SCORE_ERROR = (
+    'Оценка не может иметь значение {score}, '
+    'допустимые значения от {min} до {max}.'
+)
