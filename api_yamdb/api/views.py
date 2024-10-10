@@ -130,7 +130,7 @@ def get_user_token(request):
     failed_attempts = cache.get(cache_key, 0)
     if failed_attempts >= 5:
         raise ValidationError(
-            {'error_attempts': const.ERROR_ATTEMPTS}
+            {'error_attempts': const.ATTEMPTS_ERROR}
         )
     input_code = serializer.validated_data['confirmation_code']
     hashed_input_code = hashlib.sha256(
