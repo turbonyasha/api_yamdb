@@ -17,9 +17,11 @@ def validate_username_chars(username):
         raise ValidationError(reviewconst.USER_REGISTER_NAME_ERROR)
     invalid_chars = set(re.sub(reviewconst.USERNAME_REGEX, '', username))
     if invalid_chars:
+        repr_chars = list(map(repr, sorted(invalid_chars)))
+        invalid_chars_str = ', '.join(repr_chars)
         raise ValidationError(
             reviewconst.INVALID_USERNAME_CHARS.format(
-                invalid_chars=invalid_chars
+                invalid_chars=invalid_chars_str
             )
         )
     return username
