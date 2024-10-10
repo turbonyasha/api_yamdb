@@ -84,27 +84,20 @@ def register_user(request):
             username=serializer.validated_data['username'],
         )
     except IntegrityError:
-        errors = {}
-        exist_user = User.objects.filter(
-            Q(email=serializer.validated_data['email'])
-            | Q(username=serializer.validated_data['username'])
-        ).first()
-        if exist_user:
-            if exist_user.email == serializer.validated_data['email']:
-                errors['email'] = const.EMAIL_REGISTER_ERROR
-            if exist_user.username == serializer.validated_data['username']:
-                errors['username'] = const.USER_REGISTER_ERROR
-        if errors:
-            raise ValidationError(errors)
+        raise ValidationError(
+            const.EMAIL_REGISTER_ERROR
+            if User.objects.filter(
+                username=serializer.validated_data['username']
+            ).exists()
+            else const.USER_REGISTER_ERROR
+        )
     confirmation_code = ''.join(
         random.choices(
             settings.CONFIRMATION_CODE_CHARACTERS,
             k=settings.CONFIRMATION_CODE_LENGTH
         )
     )
-    user.confirmation_code = hashlib.sha256(
-        confirmation_code.encode()
-    ).hexdigest()
+    user.confirmation_code = confirmation_code
     user.save()
     send_confirmation_code(user, confirmation_code)
     return Response(
@@ -117,36 +110,20 @@ def register_user(request):
 @permission_classes([permissions.AllowAny], )
 def get_user_token(request):
     """Получения токена пользователя."""
-    serializer = GetTokenSerializer(
-        data=request.data
-    )
-    serializer.is_valid(
-        raise_exception=True
-    )
+    serializer = GetTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
         User,
         username=serializer.validated_data['username']
     )
-    cache_key = 'failed_attempts'
-    failed_attempts = cache.get(cache_key, 0)
-    if failed_attempts >= 5:
-        raise ValidationError(
-            {'error_attempts': const.ATTEMPTS_ERROR}
-        )
     input_code = serializer.validated_data['confirmation_code']
-    hashed_input_code = hashlib.sha256(
-        input_code.encode()
-    ).hexdigest()
     if (not user.confirmation_code
-            or user.confirmation_code != hashed_input_code):
-        cache.set(
-            key=cache_key,
-            value=failed_attempts + 1,
-            timeout=300)
+            or user.confirmation_code != input_code):
         raise ValidationError(
             {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
         )
-    user.confirmation_code = hashlib.sha256('empty'.encode()).hexdigest()
+    if user.confirmation_code != settings.DEFAULT_CONFIRMATION_CODE:
+        user.confirmation_code = settings.DEFAULT_CONFIRMATION_CODE
     user.save()
     return Response(
         {'token': str(AccessToken.for_user(user))},
