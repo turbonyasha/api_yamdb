@@ -9,9 +9,8 @@ ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
 VALIDATE_YEAR_ERROR = (
-    'Произведение не может быть создано'
-    'позднее текущего года ({this_year}). '
-    'Вы ввели: {imput_year}'
+    'Произведение не может быть создано в {imput_year} году, '
+    'это позднее текущего года: {this_year}. '
 )
 USER_REGISTER_NAME_ERROR = (
     'Имя пользователя {username} недопустимо.'
