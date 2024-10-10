@@ -98,7 +98,7 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        verbose_name='Имя профиля',
+        verbose_name='Логин',
         unique=True,
         max_length=const.MAX_LENGTH_USERNAME,
         validators=[validate_username_chars],
