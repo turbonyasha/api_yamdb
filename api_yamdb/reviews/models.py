@@ -103,7 +103,7 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        verbose_name='Юзернейм',
+        verbose_name='Имя пользователя',
         unique=True,
         max_length=const.MAX_LENGTH_USERNAME,
         validators=[validate_username_chars],
@@ -162,7 +162,7 @@ class TextAuthorPubdateModel(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='%(class)s'
+        related_name=const.CLASS_NAME
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -186,7 +186,7 @@ class Review(TextAuthorPubdateModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='%(class)s',
+        related_name=const.CLASS_NAME,
         verbose_name='Произведение'
     )
 
@@ -211,12 +211,12 @@ class Comment(TextAuthorPubdateModel):
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзыв',
-        related_name='%(class)s',
+        related_name=const.CLASS_NAME,
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='%(class)s',
+        related_name=const.CLASS_NAME,
         verbose_name='Произведение'
     )
 

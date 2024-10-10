@@ -4,7 +4,7 @@ from .constants import REVIEW_VALIDATE_ERROR
 import reviews.constants as const
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from reviews.validators import (
-    validate_creation_year, validate_username_chars, validate_score_1_to_10
+    validate_creation_year, validate_username_chars, validate_score
 )
 
 
@@ -60,16 +60,19 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
-    )
 
     class Meta:
         model = Review
-        fields = '__all__'
+        fields = (
+            'id',
+            'text',
+            'author',
+            'score',
+            'pub_date'
+        )
 
     def validate_score(self, score):
-        return validate_score_1_to_10(score)
+        return validate_score(score)
 
     def validate(self, data):
         if Review.objects.filter(
@@ -121,9 +124,12 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title = TitleReadSerializer(read_only=True)
-    review = ReviewSerializer(read_only=True)
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = (
+            'id',
+            'text',
+            'author',
+            'pub_date'
+        )

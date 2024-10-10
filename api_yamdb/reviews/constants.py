@@ -19,4 +19,7 @@ VALIDATE_YEAR_ERROR = (
 USER_REGISTER_NAME_ERROR = (
     'Недопустимое имя пользователя.'
 )
-VALIDATE_ERROR_USERNAME_ME = 'Имя me недопустимо.'
+INVALID_USERNAME_CHARS = (
+    'Поле username содержит недопустимые символы: {invalid_chars}'
+)
+CLASS_NAME = '%(class)ss'
