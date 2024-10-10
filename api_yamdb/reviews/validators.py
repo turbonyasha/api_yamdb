@@ -19,11 +19,9 @@ def validate_username_chars(username):
         )
     invalid_chars = set(re.sub(const.USERNAME_REGEX, '', username))
     if invalid_chars:
-        repr_chars = list(map(repr, sorted(invalid_chars)))
-        invalid_chars_str = ', '.join(repr_chars)
         raise ValidationError(
             const.INVALID_USERNAME_CHARS.format(
-                invalid_chars=invalid_chars_str
+                invalid_chars=' '.join(set(invalid_chars))
             )
         )
     return username

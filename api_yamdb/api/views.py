@@ -133,7 +133,7 @@ def get_user_token(request):
     )
 
 
-class ContentViewSet(
+class ContentGroupsViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
@@ -149,13 +149,13 @@ class ContentViewSet(
     http_method_names = const.ALLOWED_HTTP_METHODS_CATEGORY_GENRE
 
 
-class GenreViewSet(ContentViewSet):
+class GenreViewSet(ContentGroupsViewSet):
     """Представление для работы только с жанрами."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
-class CategoryViewSet(ContentViewSet):
+class CategoryViewSet(ContentGroupsViewSet):
     """Представление для работы только с категориями."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
