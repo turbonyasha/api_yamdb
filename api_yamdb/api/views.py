@@ -1,9 +1,7 @@
-import hashlib
 import random
 
-from django.core.cache import cache
 from django.db import IntegrityError
-from django.db.models import Avg, Q
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
