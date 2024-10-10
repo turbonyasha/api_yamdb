@@ -7,7 +7,7 @@ SEND_MAIL_MESSAGE = (
     'Код подтверждения: {confirmation_code}'
 )
 CONFIRMATION_CODE_ERROR = 'Неверный код подтверждения.'
-
+ERROR_ATTEMPTS = 'Превышено количество попыток. Попробуйте позже.'
 USER_REGISTER_ERROR = (
     'Этот username уже существует.'
 )
