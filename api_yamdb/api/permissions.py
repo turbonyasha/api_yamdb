@@ -24,7 +24,7 @@ class ModeratorOnlyPermission(BasePermission):
         )
 
 
-def is_authenticated_with_permissions(request):
+def is_authenticated_managers(request):
     admin_permission = AdminOnlyPermission()
     moderator_permission = ModeratorOnlyPermission()
     return (
@@ -56,7 +56,7 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             return True
         return (
             request.user.is_authenticated 
-            or is_authenticated_with_permissions(request)
+            or is_authenticated_managers(request)
         )
 
     def has_object_permission(self, request, view, obj):
@@ -64,5 +64,5 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             return True
         return (
             obj.author == request.user
-            or is_authenticated_with_permissions(request)
+            or is_authenticated_managers(request)
         )
