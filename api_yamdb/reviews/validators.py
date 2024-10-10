@@ -2,7 +2,6 @@ import re
 from datetime import datetime as dt
 
 from django.core.exceptions import ValidationError
-from rest_framework import serializers
 
 import reviews.constants as reviewconst
 import api.constants as apiconst
@@ -28,7 +27,7 @@ def validate_username_chars(username):
 def validate_creation_year(creation_year):
     this_year = dt.today().year
     if creation_year > this_year:
-        raise serializers.ValidationError(
+        raise ValidationError(
             reviewconst.VALIDATE_YEAR_ERROR.format(
                 this_year=this_year, input_year=creation_year
             )
@@ -38,7 +37,7 @@ def validate_creation_year(creation_year):
 
 def validate_score(score):
     if not (reviewconst.MIN_SCORE <= score <= reviewconst.MAX_SCORE):
-        raise serializers.ValidationError(
+        raise ValidationError(
             apiconst.REVIEW_SCORE_ERROR.format(
                 score=score,
                 min=reviewconst.MIN_SCORE,
