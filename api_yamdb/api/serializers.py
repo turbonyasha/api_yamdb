@@ -1,4 +1,3 @@
-from django.core.validators import RegexValidator
 from rest_framework import serializers, exceptions
 
 from .constants import REVIEW_VALIDATE_ERROR
@@ -21,19 +20,11 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         )
 
-    read_only_fields = ('role',)
-
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=const.MAX_LENGTH_USERNAME,
-        validators=[
-            RegexValidator(
-                regex=const.USERNAME_REGEX,
-                message=const.USER_NAME_INVALID_MSG,
-            ),
-            validate_username_chars
-        ],
+        validators=[validate_username_chars],
         required=True,
     )
     email = serializers.EmailField(
@@ -45,7 +36,8 @@ class UserRegistrationSerializer(serializers.Serializer):
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=const.MAX_LENGTH_USERNAME,
-        required=True
+        required=True,
+        validators=[validate_username_chars]
     )
     confirmation_code = serializers.CharField(
         required=True

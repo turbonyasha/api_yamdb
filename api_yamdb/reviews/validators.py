@@ -13,13 +13,13 @@ def validate_username_chars(username):
     Проверяет, есть ли в имени пользователя
     недопустимые символы.
     """
-
     if username == apiconst.USERNAME_ME:
-        raise ValidationError(reviewconst.VALIDATE_ERROR_USERNAME_ME)
-
-    if not re.fullmatch(reviewconst.USERNAME_REGEX, username):
-        raise ValidationError('Поле username содержит недопустимые символы.')
-
+        raise ValidationError(reviewconst.USER_REGISTER_NAME_ERROR)
+    invalid_chars = set(re.sub(reviewconst.USERNAME_REGEX, '', username))
+    if invalid_chars:
+        raise ValidationError(
+            f'Поле username содержит недопустимые символы: {invalid_chars}'
+        )
     return username
 
 
