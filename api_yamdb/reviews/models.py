@@ -181,7 +181,6 @@ class Review(TextAuthorPubdateModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        # related_name='%(class)ss',
         verbose_name='Произведение'
     )
 
@@ -206,12 +205,10 @@ class Comment(TextAuthorPubdateModel):
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзыв',
-        # related_name='%(class)ss',
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        # related_name='%(class)ss',
         verbose_name='Произведение'
     )
 
