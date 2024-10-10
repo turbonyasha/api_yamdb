@@ -1,5 +1,3 @@
-USERNAME_ME = 'me'
-
 ALLOWED_HTTP_METHODS = ('get', 'post', 'delete', 'patch')
 ALLOWED_HTTP_METHODS_CATEGORY_GENRE = ('get', 'post', 'delete')
 
@@ -13,9 +11,5 @@ USER_REGISTER_ERROR = (
 )
 EMAIL_REGISTER_ERROR = (
     'Этот email уже существует.'
-)
-REVIEW_SCORE_ERROR = (
-    'Оценка не может иметь значение {score}, '
-    'допустимые значения от {min} до {max}.'
 )
 REVIEW_VALIDATE_ERROR = 'Вы уже оставили отзыв на это произведение.'
