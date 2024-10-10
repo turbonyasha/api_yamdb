@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 import api.constants as const
 from api_yamdb import settings
-from reviews.constants import USERNAME_ME
+from reviews.constants import PROFILE_URL_NAME
 from reviews.models import User, Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (
@@ -51,7 +51,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['GET', 'PATCH'],
-        url_path=USERNAME_ME,
+        url_path=PROFILE_URL_NAME,
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
