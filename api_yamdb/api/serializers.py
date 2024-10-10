@@ -60,13 +60,16 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title = serializers.SlugRelatedField(
-        read_only=True, slug_field='name'
-    )
 
     class Meta:
         model = Review
-        fields = '__all__'
+        fields = (
+            'id',
+            'text',
+            'author',
+            'score',
+            'pub_date'
+        )
 
     def validate_score(self, score):
         return validate_score(score)
@@ -116,9 +119,12 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title = TitleReadSerializer(read_only=True)
-    review = ReviewSerializer(read_only=True)
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = (
+            'id',
+            'text',
+            'author',
+            'pub_date'
+        )

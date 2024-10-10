@@ -17,7 +17,7 @@ from .filters import TitleFilter
 from .permissions import (
     AdminOnlyPermission,
     AdminOrSafeMethodPermission,
-    IsAuthorAdminOrReadOnly,
+    IsAuthorModeratorAdminOrReadOnly,
 )
 from .serializers import (
     CategorySerializer,
@@ -166,7 +166,7 @@ class CategoryViewSet(ContentViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """Представление для работы с произведениями."""
     queryset = Title.objects.annotate(
-        rating=Avg('review__score')
+        rating=Avg('reviews__score')
     ).order_by(*Title._meta.ordering)
     permission_classes = (AdminOrSafeMethodPermission,)
     filter_backends = (DjangoFilterBackend,)
@@ -185,14 +185,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     для модели отзывов на произведени.
     """
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthorAdminOrReadOnly]
+    permission_classes = [IsAuthorModeratorAdminOrReadOnly]
     http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title().review.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, title=self.get_title())
@@ -204,14 +204,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     для модели комментариев к отзывам на произведения.
     """
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthorAdminOrReadOnly]
+    permission_classes = [IsAuthorModeratorAdminOrReadOnly]
     http_method_names = const.ALLOWED_HTTP_METHODS
 
     def get_review(self):
         return get_object_or_404(Review, pk=self.kwargs['review_id'])
 
     def get_queryset(self):
-        return self.get_review().comment.all()
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
         review = self.get_review()

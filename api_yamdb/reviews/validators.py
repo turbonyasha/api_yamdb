@@ -18,7 +18,9 @@ def validate_username_chars(username):
     invalid_chars = set(re.sub(reviewconst.USERNAME_REGEX, '', username))
     if invalid_chars:
         raise ValidationError(
-            f'Поле username содержит недопустимые символы: {invalid_chars}'
+            reviewconst.INVALID_USERNAME_CHARS.format(
+                invalid_chars=invalid_chars
+            )
         )
     return username
 
@@ -36,5 +38,11 @@ def validate_creation_year(creation_year):
 
 def validate_score(score):
     if not (reviewconst.MIN_SCORE <= score <= reviewconst.MAX_SCORE):
-        raise serializers.ValidationError(reviewconst.REVIEW_SCORE_ERROR)
+        raise serializers.ValidationError(
+            apiconst.REVIEW_SCORE_ERROR.format(
+                score=score,
+                min=reviewconst.MIN_SCORE,
+                max=reviewconst.MAX_SCORE
+            )
+        )
     return score

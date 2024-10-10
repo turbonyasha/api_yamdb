@@ -1,5 +1,3 @@
-from reviews.constants import MIN_SCORE, MAX_SCORE
-
 USERNAME_ME = 'me'
 
 ALLOWED_HTTP_METHODS = ('get', 'post', 'delete', 'patch')
@@ -16,5 +14,8 @@ USER_REGISTER_ERROR = (
 EMAIL_REGISTER_ERROR = (
     'Этот email уже существует.'
 )
-REVIEW_SCORE_ERROR = f'Оценка может быть только от {MIN_SCORE} до {MAX_SCORE}'
+REVIEW_SCORE_ERROR = (
+    'Оценка не может иметь значение {score}, '
+    'допустимые значения от {min} до {max}.'
+)
 REVIEW_VALIDATE_ERROR = 'Вы уже оставили отзыв на это произведение.'
