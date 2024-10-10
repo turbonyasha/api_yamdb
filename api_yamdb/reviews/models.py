@@ -1,5 +1,3 @@
-from datetime import datetime as dt
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -84,9 +82,6 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name[:20]
-
-    def get_current_year(self):
-        return dt.today().year
 
 
 class User(AbstractUser):

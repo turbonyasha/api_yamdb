@@ -75,10 +75,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         return validate_score(score)
 
     def validate(self, data):
-        if Review.objects.filter(
+        if self.context['request'].method == 'POST' and Review.objects.filter(
                 title_id=self.context['view'].kwargs['title_id'],
                 author=self.context['request'].user
-        ).exists() and self.context['request'].method == 'POST':
+        ).exists():
             raise exceptions.ValidationError(REVIEW_VALIDATE_ERROR)
         return data
 
@@ -91,18 +91,12 @@ class TitleReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id',
-            'name',
-            'year',
-            'rating',
-            'description',
-            'genre',
-            'category'
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
         read_only_fields = fields
 
 
-class TitleCRUDSerializer(TitleReadSerializer):
+class TitleCreateUpdateSerializer(TitleReadSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -113,8 +107,9 @@ class TitleCRUDSerializer(TitleReadSerializer):
         slug_field='slug'
     )
 
-    class Meta(TitleReadSerializer.Meta):
-        read_only_fields = ()
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate_year(self, creation_year):
         return validate_creation_year(creation_year)

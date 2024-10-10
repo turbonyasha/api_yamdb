@@ -14,7 +14,8 @@ USER_NAME_INVALID_MSG = (
 )
 VALIDATE_YEAR_ERROR = (
     'Произведение не может быть создано'
-    'позднее {this_year} года.'
+    'позднее текущего года ({this_year}). '
+    'Вы ввели: {imput_year}'
 )
 USER_REGISTER_NAME_ERROR = (
     'Недопустимое имя пользователя.'
