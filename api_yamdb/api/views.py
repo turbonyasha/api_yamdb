@@ -70,6 +70,13 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
 
+def get_confirmation_code():
+    return (''.join(random.choices(
+        settings.CONFIRMATION_CODE_CHARACTERS,
+        k=settings.CONFIRMATION_CODE_LENGTH
+    )))
+
+
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny], )
 def register_user(request):
@@ -77,7 +84,7 @@ def register_user(request):
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     try:
-        user, created = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             email=serializer.validated_data['email'],
             username=serializer.validated_data['username'],
         )
@@ -89,15 +96,9 @@ def register_user(request):
             ).exists()
             else const.USER_REGISTER_ERROR
         )
-    confirmation_code = ''.join(
-        random.choices(
-            settings.CONFIRMATION_CODE_CHARACTERS,
-            k=settings.CONFIRMATION_CODE_LENGTH
-        )
-    )
-    user.confirmation_code = confirmation_code
+    user.confirmation_code = get_confirmation_code()
     user.save()
-    send_confirmation_code(user, confirmation_code)
+    send_confirmation_code(user, user.confirmation_code)
     return Response(
         serializer.data,
         status=status.HTTP_200_OK
