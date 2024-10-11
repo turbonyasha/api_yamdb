@@ -119,9 +119,7 @@ def get_user_token(request):
         if user.confirmation_code != settings.DEFAULT_CONFIRMATION_CODE:
             user.confirmation_code = settings.DEFAULT_CONFIRMATION_CODE
             user.save()
-        raise ValidationError(
-            'Неверный код подтверждения. Требуется запросить новый код.'
-        )
+        raise ValidationError(const.CONFIRMATION_CODE_ERROR)
     return Response(
         {'token': str(AccessToken.for_user(user))},
         status=status.HTTP_200_OK
