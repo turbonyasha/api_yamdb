@@ -4,7 +4,7 @@ ALLOWED_HTTP_METHODS_CATEGORY_GENRE = ('get', 'post', 'delete')
 SEND_MAIL_MESSAGE = (
     'Код подтверждения: {confirmation_code}'
 )
-CONFIRMATION_CODE_ERROR = 'Неверный код подтверждения.'
+CONFIRMATION_CODE_ERROR = 'Неверный код подтверждения. Требуется запросить новый код.'
 USER_REGISTER_ERROR = (
     'Этот username уже существует.'
 )
