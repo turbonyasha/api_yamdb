@@ -1,9 +1,7 @@
-import hashlib
 import random
 
-from django.core.cache import cache
 from django.db import IntegrityError
-from django.db.models import Avg, Q
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
@@ -117,16 +115,13 @@ def get_user_token(request):
         username=serializer.validated_data['username']
     )
     input_code = serializer.validated_data['confirmation_code']
-    if (
-        not user.confirmation_code
-        or user.confirmation_code != input_code
-    ):
+    if user.confirmation_code != input_code:
+        if user.confirmation_code != settings.DEFAULT_CONFIRMATION_CODE:
+            user.confirmation_code = settings.DEFAULT_CONFIRMATION_CODE
+            user.save()
         raise ValidationError(
-            {'confirmation_code': const.CONFIRMATION_CODE_ERROR}
+            'Неверный код подтверждения. Требуется запросить новый код.'
         )
-    if user.confirmation_code != settings.DEFAULT_CONFIRMATION_CODE:
-        user.confirmation_code = settings.DEFAULT_CONFIRMATION_CODE
-    user.save()
     return Response(
         {'token': str(AccessToken.for_user(user))},
         status=status.HTTP_200_OK
