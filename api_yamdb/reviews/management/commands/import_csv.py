@@ -40,7 +40,7 @@ class Command(BaseCommand):
         data = {}
         for header in headers:
             field = model._meta.get_field(header)
-            if header[-3:] == '_id':
+            if header.endswith('_id'):
                 data_header = header[:-3]
             else:
                 data_header = header
